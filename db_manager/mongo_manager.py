@@ -3,31 +3,38 @@ import pymongo
 from pymongo.errors import PyMongoError
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from .errors import (NoDatabaseInitialized, 
-                     NoDatabaseCredentialsProvided,
-                     NoModelsRegistered)
+from db_manager.errors import (NoDatabaseInitialized, 
+                               NoDatabaseCredentialsProvided,
+                               NoModelsRegistered)
 
 load_dotenv()
 
 class MongoManager:
-    DB = None
+    DB:pymongo.MongoClient|None = None
 
     def __init__(self, collection_name:str, models:dict|None=None) -> None:
-        if not self.DB:
-            raise NoDatabaseInitialized
-        self.db = self.DB[collection_name]
+        if self.DB is not None:
+            self.db = self.DB[collection_name]
+        else:
+            raise NoDatabaseInitialized()
         self.models = models
 
     @classmethod
-    def __init_database__(cls, conn_str=None, db_name=None) -> None:
+    def __init_database__(cls, conn_str:str|None=None, db_name:str|None=None) -> None:
+        if cls.DB:
+            print("Database already exists")
+            return True
+        
         connection_string = conn_str or os.environ.get('MONGO_CONNECTION_STRING')
         db_name = db_name or os.environ.get("MONGO_DB_NAME")
 
         if not connection_string or not db_name:
-            raise NoDatabaseCredentialsProvided
-
-        CLIENT = pymongo.MongoClient(connection_string, maxPoolSize=400)
-        cls.DB = CLIENT[db_name]
+            raise NoDatabaseCredentialsProvided()
+        try:
+            CLIENT = pymongo.MongoClient(connection_string, maxPoolSize=400)
+            cls.DB = CLIENT[db_name]
+        except PyMongoError as e:
+            print(e)
         print(f"Connected to MongoDB database: {db_name}")
 
     def register_models(self, models:dict):
@@ -104,7 +111,7 @@ class MongoManager:
         if res.modified_count == 0:
             return None
         return res
-
+    
     def delete_documents(self, query, **kwargs):
         try:
             res = self.db.delete_many(query, **kwargs)

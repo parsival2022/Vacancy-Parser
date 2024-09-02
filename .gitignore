@@ -1,3 +1,4 @@
 .env
 .venv
 cli.py
+__pycache__

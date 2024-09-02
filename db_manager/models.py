@@ -8,7 +8,7 @@ class Vacancy(BaseModel):
     source:str
     title:str
     country:str
-    level:list
+    level:str|list
     skills:list
     job_type:str
     employment_type:str

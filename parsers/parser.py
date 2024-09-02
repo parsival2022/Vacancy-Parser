@@ -1,8 +1,11 @@
+import os
 import time
 import json
 import random
+import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException, WebDriverException
@@ -13,11 +16,14 @@ from typing import Callable, Type, Union, Tuple, Any
 options = Options()
 options.add_argument("enable-automation")
 options.add_argument("--no-sandbox")
-options.add_argument("--disable-extensions")
-options.add_argument("--dns-prefetch-disable")
+# options.add_argument("--disable-extensions")
+# options.add_argument("--dns-prefetch-disable")
 options.add_argument("--disable-gpu")
-options.add_argument("--window-size=1920,1080")
-options.add_argument("--disable-dev-shm-usage")
+options.add_argument("--headless")
+options.add_argument("--disable-software-rasterizer")
+# options.add_argument("--window-size=1920,1080")
+# options.add_argument("--disable-dev-shm-usage")
+# options.add_argument("--disable-webrtc")
 
 HTTPS = "https"
 HTTP = "http"
@@ -26,14 +32,19 @@ class Parser:
     prefixes = {HTTPS: "https://",
                 HTTP: "http://"}
 
-    def __init__(self, db_manager, source_name) -> None:
-        self.db = db_manager
+    def __init__(self, init_url, db_manager, source_name, use_driver=True) -> None:
+        load_dotenv()
+        self.init_url = init_url
+        self.db_manager = db_manager
         self.source_name = source_name
         self.data_file = f"{self.source_name}_data.json"
         self.urls_file = f"{self.source_name}_urls.json"
+        self.username = os.environ.get('USERNAME')
+        self.password = os.environ.get('PASSWORD')
         self.cache = []
         self.urls = []
-        self.driver = webdriver.Chrome(options=options)
+        if use_driver:
+            self.driver = webdriver.Chrome(options=options)
     
     def get_time(self, t:int|tuple) -> int:
         if isinstance(t, int): 
@@ -58,9 +69,19 @@ class Parser:
         checked_urls = [self.add_prefix(url) for url in urls]
         self.write_to_file('normalised_data.json', checked_urls)
 
-    def open_page(self, url=None) -> webdriver:
-        url = self.url if not url else url
+    def open_page(self, url=None) -> webdriver.Chrome:
+        url = self.init_url if not url else url
         return self.driver.get(url)
+    
+    def make_get_request(self, url=None, soup=False, **kwargs):
+        url = self.init_url if not url else url
+        res = requests.get(url, **kwargs)
+        print(res.text)
+        res.raise_for_status()
+        if soup:
+           soup = BeautifulSoup(res.text, "html.parser")
+           return soup
+        return res
 
     def parse_page(self, page:webdriver.Chrome) -> BeautifulSoup:
         self.wait((4, 10))
@@ -98,7 +119,10 @@ class Parser:
         return decorator
 
     def data_formatter(self, d:dict) -> dict:
-        return {'date_of_extraction': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.update(d)
+        res = {'date_of_extraction': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'source': self.source_name}
+        res.update(d)
+        return res
         
     def remove_double_urls(self):
         data = []
@@ -108,9 +132,16 @@ class Parser:
         self.urls = data
 
     def insert_to_db(self, data:dict, model_type):
-        return self.db_manager.create_document(data, model_type)
+        d = self.data_formatter(data)
+        return self.db_manager.create_document(d, model_type)
             
     def write_to_file(self, data, filename='extracted_data.json', mode='w'):
         with open(filename, mode, encoding='utf-8') as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
         print(f"Data has been written to {filename}")
+
+    def login(self):
+        pass
+
+    def parsing_suite(self):
+        pass
