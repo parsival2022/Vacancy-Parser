@@ -114,5 +114,3 @@ class Parser:
         with open(filename, mode, encoding='utf-8') as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
         print(f"Data has been written to {filename}")
-
-
