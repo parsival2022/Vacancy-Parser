@@ -7,23 +7,12 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from dotenv import load_dotenv
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException, WebDriverException
 from selenium.webdriver.chrome.options import Options
 from typing import Callable, Type, Union, Tuple, Any
 
-
-options = Options()
-options.add_argument("enable-automation")
-options.add_argument("--no-sandbox")
-# options.add_argument("--disable-extensions")
-# options.add_argument("--dns-prefetch-disable")
-options.add_argument("--disable-gpu")
-options.add_argument("--headless")
-options.add_argument("--disable-software-rasterizer")
-# options.add_argument("--window-size=1920,1080")
-# options.add_argument("--disable-dev-shm-usage")
-# options.add_argument("--disable-webrtc")
 
 HTTPS = "https"
 HTTP = "http"
@@ -43,8 +32,23 @@ class Parser:
         self.password = os.environ.get('PASSWORD')
         self.cache = []
         self.urls = []
-        if use_driver:
-            self.driver = webdriver.Chrome(options=options)
+        self.use_driver = use_driver
+        if self.use_driver:
+            self.driver = webdriver.Chrome
+            self.service = Service
+            self.options = Options()
+            self.options.add_argument("enable-automation")
+            self.options.add_argument("--no-sandbox")
+            self.options.add_argument("--disable-extensions")
+            self.options.add_argument("--dns-prefetch-disable")
+            self.options.add_argument("--disable-gpu")
+            self.options.add_argument("--disable-gpu-compositing")
+            # self.options.add_argument("--headless")
+            # self.options.add_argument("--disable-software-rasterizer")
+            # self.options.add_argument("--window-size=1920,1080")
+            self.options.add_argument("--disable-dev-shm-usage")
+            self.options.add_argument("--disable-webrtc")
+            
     
     def get_time(self, t:int|tuple) -> int:
         if isinstance(t, int): 
@@ -71,7 +75,9 @@ class Parser:
 
     def open_page(self, url=None) -> webdriver.Chrome:
         url = self.init_url if not url else url
-        return self.driver.get(url)
+        driver = webdriver.Chrome(service=Service(), options=self.options)
+        page = driver.get(url)
+        return page
     
     def make_get_request(self, url=None, soup=False, **kwargs):
         url = self.init_url if not url else url
