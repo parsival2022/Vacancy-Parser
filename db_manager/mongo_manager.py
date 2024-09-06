@@ -3,8 +3,7 @@ import pymongo
 from pymongo.errors import PyMongoError
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from db_manager.errors import (NoDatabaseInitialized, 
-                               NoDatabaseCredentialsProvided,
+from db_manager.errors import (NoDatabaseCredentialsProvided,
                                NoModelsRegistered)
 
 load_dotenv()
@@ -13,10 +12,12 @@ class MongoManager:
     DB:pymongo.MongoClient|None = None
 
     def __init__(self, collection_name:str, models:dict|None=None) -> None:
-        if self.DB is not None:
-            self.db = self.DB[collection_name]
-        else:
-            raise NoDatabaseInitialized()
+        if not self.DB:
+            try:
+                self.__init_database__()
+            except (PyMongoError, NoDatabaseCredentialsProvided) as e:
+                print(e)
+        self.db = self.DB[collection_name]
         self.models = models
 
     @classmethod
@@ -29,13 +30,13 @@ class MongoManager:
         db_name = db_name or os.environ.get("MONGO_DB_NAME")
 
         if not connection_string or not db_name:
-            raise NoDatabaseCredentialsProvided()
-        try:
-            CLIENT = pymongo.MongoClient(connection_string, maxPoolSize=400)
-            cls.DB = CLIENT[db_name]
-        except PyMongoError as e:
-            print(e)
+            raise NoDatabaseCredentialsProvided
+
+        CLIENT = pymongo.MongoClient(connection_string, maxPoolSize=400)
+        cls.DB = CLIENT[db_name]
         print(f"Connected to MongoDB database: {db_name}")
+
+        
 
     def register_models(self, models:dict):
         self.models = models

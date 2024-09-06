@@ -1,63 +1,164 @@
-import requests, time
+import re
 from .parser import Parser
+from bs4 import BeautifulSoup
 from db_manager.mongo_manager import MongoManager
-from db_manager.models import Vacancy
+from db_manager.models import BasicVacancy, Vacancy
+from pydantic import ValidationError
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException, WebDriverException
+from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException
+from selenium.webdriver.common.keys import Keys
+from .decorators import repeat_if_fail
+from .constants import *
 
 VACANCY = "vacancy"
-DELAY_4_8 = (4, 8) 
-DELAY_8_10 = (8, 10)
-DELAY_10_15 = (10, 15)
-DELAY_60 = 60
-test_doc = {
-    'title': "test title",
-    'country': "UA",
-    'level': "junior",
-    'skills': ['JS', 'Python'],
-    'job_type': 'hybrid',
-    'employment_type': 'contract',
-    'salary': '400$'
-}
+BASIC_VACANCY = "vacancy_url"
 
 class LinkedinParser(Parser):
-    headers = {
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "Accept-encoding": "gzip, deflate, br, zstd",
-        "Accept-language": "uk-UA,uk;q=0.9",
-        "Cache-control": "max-age=0",
-        "Cookie": 'JSESSIONID=ajax:2659555701813428027; lang=v=2&lang=uk-ua; bcookie="v=2&3545f150-c339-4c51-8874-b2309ad18a60"; bscookie="v=1&202409020531171a850f0f-8edb-4a8f-826a-ed873920d3d4AQET4B9QBZNdXnR6KCzGD4F57GFhlrg4"; lidc="b=OGST01:s=O:r=O:a=O:p=O:g=3381:u=1:x=1:i=1725255077:t=1725341477:v=2:sig=AQGXaR3L2EqRy270J6lvBaUY1L7TCFG6"; li_rm=AQHILcJ7xK_xMQAAAZGxN1ADH1pKoLsa80KPyG45hUpoJfKcbmLuNppD8BTfV1sgf4QoOrHYApZfbs9hUGZAI9dStnYlT0gczhbSRWlIeyA3KPF8-X4KB_hY; AMCVS_14215E3D5995C57C0A495C55%40AdobeOrg=1; AMCV_14215E3D5995C57C0A495C55%40AdobeOrg=-637568504%7CMCIDTS%7C19969%7CMCMID%7C79849021528006158833348592649415156647%7CMCAAMLH-1725859884%7C6%7CMCAAMB-1725859884%7C6G1ynYcLPuiQxYZrsz_pkqfLG9yMXBpb2zX5dvJdYQJzPXImdj0y%7CMCOPTOUT-1725262284s%7CNONE%7CvVersion%7C5.1.1; aam_uuid=79351282031360936963366362077809414252',
-        "Priority": "u=0, i",
-        "Sec-ch-ua": 'Chromium";v="128", "Not;A=Brand";v="24", "Google Chrome";v="128"',
-        "Sec-ch-ua-mobile": "?0",
-        "Sec-ch-ua-platform": '"Windows"',
-        "Sec-fetch-dest": "document",
-        "Sec-fetch-mode": "navigate",
-        "Sec-fetch-site": "none",
-        "Sec-fetch-user": "?1",
-        "Upgrade-insecure-requests": "1",
-        "User-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
-    }
+    base_url = "https://www.linkedin.com"
+    login_url = base_url + "/checkpoint/lg/login-submit"
+    current_page = None
 
-    def login(self):
+    jobs_button = (By.CSS_SELECTOR, '[href="https://www.linkedin.com/jobs/?"]')
+    search_loc_input = (By.XPATH, "//input[contains(@id, 'jobs-search-box-location-id-ember')]")
+    search_kw_input = (By.XPATH, "//input[contains(@id, 'jobs-search-box-keyword-id-ember')]")
+    search_btn = (By.XPATH, "//button[contains(@class, 'jobs-search-box__submit-button')]")
+    next_page_numbered = lambda self: (By.CSS_SELECTOR, f'[data-test-pagination-page-btn="{self.current_page + 1}"]')
+    next_page_dots = (By.XPATH, '//li[contains(@class, "artdeco-pagination__indicator")]/button/span[text()="…"]')
+    skills_btn = (By.XPATH, '//span[text()="Show qualification details"]')
+    job_company = ("company", ("div", {"class": re.compile(r"company-name")}))
+    job_title = ("title", ("div", {"class": re.compile(r"job-title")}))
+    job_description = ("description", ("div", {"class": re.compile(r"jobs-description-content__text")}))
+    job_primary = (By.XPATH, '//div[contains(@class,"unified-top-card__primary-description-container")]')
+    job_skills = (By.XPATH, '//ul[contains(@class, "job-details-skill-match-status-list")]')
+    job_insights = (By.XPATH, '//li[contains(@class, "job-insight--highlight")]')
+
+
+    @repeat_if_fail(NoSuchElementException, DELAY_5)
+    def perform_login(self):
+        self.driver.get(self.init_url)
+        self.wait(DELAY_10_15)
+        self.fill_input_element(By.ID, "username", self.username)
+        self.fill_input_element(By.ID, "password", self.password)
+        self.wait(DELAY_4_8)
+        self.driver.find_element(By.CSS_SELECTOR, '[data-litms-control-urn="login-submit"]').click()
         try:
-            login_page = self.driver(service=self.service(), options=self.options)
-            self.wait(DELAY_60)
-            print(login_page.page_source)
-            login_page.find_element(By.ID, 'username').send_keys(self.username)
-            login_page.find_element(By.ID, 'password').send_keys(self.password)
-            self.wait(DELAY_4_8)
-        # login_page.find_element(By.CSS_SELECTOR, '[data-litms-control-urn="login-submit"]').click()
-            self.wait(DELAY_60)
-            login_page.quit()
-        except WebDriverException as e:
-            print(e)
+            fail_usn = self.driver.find_element(By.ID, "error-for-username")
+            fail_psw = self.driver.find_element(By.ID, "error-for-password")
+            self.driver.quit()
+        except NoSuchElementException: 
+            pass
+        self.wait(DELAY_15)
+
+    @repeat_if_fail(NoSuchElementException, DELAY_5)
+    def insert_search_params(self, kw, lc):
+        self.click_on_element(*self.jobs_button)
+        self.wait(DELAY_10_15)
+        self.fill_input_element(*self.search_loc_input, lc)
+        self.wait(DELAY_5_10)
+        self.fill_input_element(*self.search_kw_input, kw)
+        self.wait(DELAY_8_10)
+        try:
+            self.click_on_element(*self.search_btn)
+        except ElementNotInteractableException:
+            self.fill_input_element(*self.search_kw_input, Keys.ENTER)
+        self.wait(DELAY_8_10)
+        location_txt = self.driver.find_element(*self.search_loc_input).get_attribute("data-job-search-box-location-input-trigger")
+        if not lc == location_txt:
+            self.fill_input_element(*self.search_loc_input, lc)
+            self.wait(DELAY_3)
+            self.fill_input_element(*self.search_loc_input, Keys.ENTER)
+            self.wait(DELAY_8_10)
+
+    @repeat_if_fail(NoSuchElementException, DELAY_10)
+    def perform_jobs_search(self, search_str, loc):
+        self.current_page = 1
+        self.insert_search_params(search_str, loc)
+        while self.current_page:
+            try:
+                self.wait(DELAY_15)
+                raw_jobs = self.soup_two_level_extr_all('ul', {'class': "scaffold-layout__list-container"}, 'li', {})
+                for job in raw_jobs:
+                    try:
+                        j_id = job['data-occludable-job-id']
+                        j_url = f"{self.base_url}/jobs/view/{j_id}/"
+                        self.append_to_file(f"{self.source_name}_{loc}_{search_str}_urls.txt", j_url)
+                        if not self.db_manager.check_if_exist({"url": j_url}):
+                            data = {"url": j_url, "location": loc, "keyword": search_str, "source":self.source_name}
+                            self.db_manager.create_document(data, BASIC_VACANCY)
+                    except KeyError: continue
+                self.wait(DELAY_4_8)
+                try:
+                    self.click_on_element(*self.next_page_numbered())
+                    self.current_page += 1
+                except NoSuchElementException:
+                    self.click_on_element(*self.next_page_dots)
+                    self.current_page += 1
+            except (NoSuchElementException, ElementNotInteractableException):
+                self.current_page = None
+
+    def perform_job_parsing(self, search_str, loc):
+        def create_key(k, v, i):
+            try:
+                data[k] = v[i]
+            except IndexError:
+                pass
+        
+        urls = self.db_manager.get_documents({"location": loc, "keyword": search_str})
+        feed = self.driver.current_window_handle
+        for url in urls:
+            self.driver.switch_to.new_window('tab')
+            self.driver.get(url["url"])
+            self.wait(DELAY_15)
+            soup:BeautifulSoup = self.parse_page()
+            data = self.soup_extract_text_suite(soup, 
+                                            self.job_title, 
+                                            self.job_company,
+                                            self.job_description)
+            job_primary = self.driver.find_element(*self.job_primary).text.split("·")
+            job_insights = self.driver.find_element(*self.job_insights).text.split("·")
+            create_key("exact_location", job_primary, 0)
+            create_key("workplace_type", job_insights, 0)
+            create_key("employment_type", job_insights, 1)
+            create_key("level", job_insights, 2)
+            self.click_on_element(*self.skills_btn)
+            self.wait(DELAY_7)
+            try:
+                job_skills = self.driver_two_level_extr_all(*self.job_skills, By.TAG_NAME, "li")
+                skills = []
+                for skill in job_skills:
+                    sk = skill.text.split(" ")[0]
+                    skills.append(sk.replace("\nAdd", ""))
+                data["skills"] = skills
+            except NoSuchElementException:
+                pass
+            print(data)
+            try:
+                vacancy = self.db_manager.models[VACANCY].model_validate(data)
+                self.db_manager.update_document({"url": url}, {"$set": vacancy.model_dump()})
+            except ValidationError:
+                pass
+            self.driver.close()
+            self.driver.switch_to.window(feed)
+            
+            
+    def parsing_suite(self, locations, keywords):           
+        self.perform_login()
+        
+        for location in locations:
+            for keyword in keywords:
+                self.wait(DELAY_10_15)
+                # self.perform_jobs_search(keyword, location)
+                self.perform_job_parsing(keyword, location)
+                
+            
 
 if __name__ == "__main__":
-    MongoManager.__init_database__()
-    db_manager = MongoManager("Vacancies", {VACANCY: Vacancy})
+    locations = (USA, EU)
+    keywords = (PYTHON, JAVA, JS) 
+    db_manager = MongoManager("Vacancies", {VACANCY: Vacancy, BASIC_VACANCY: BasicVacancy})
     linkedin = LinkedinParser("https://www.linkedin.com/login/uk", 
                               db_manager, 
-                              source_name="Linkedin", 
-                              use_driver=True)
-    linkedin.login()
+                              "Linkedin", 
+                              use_driver=True,
+                              use_request=True)
+    linkedin.parsing_suite(locations, keywords)
