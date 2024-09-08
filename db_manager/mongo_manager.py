@@ -17,8 +17,8 @@ class MongoManager:
                 self.__init_database__()
             except (PyMongoError, NoDatabaseCredentialsProvided) as e:
                 print(e)
-        self.db = self.DB[collection_name]
-        self.models = models
+        self.db:pymongo.MongoClient = self.DB[collection_name]
+        self.models:dict = models
 
     @classmethod
     def __init_database__(cls, conn_str:str|None=None, db_name:str|None=None) -> None:
@@ -51,7 +51,6 @@ class MongoManager:
 
     def to_list(self, cursor):
         """Returns the list of objects from the PyMongo cursor."""
-
         res = []
         for el in cursor:
             res.append(self.id_to_string(el))
@@ -98,8 +97,8 @@ class MongoManager:
 
     def update_document(self, query, update, **kwargs):
         """Updates the document."""
-        document = self.db.find_one_and_update(query, update, return_document=pymongo.ReturnDocument.AFTER, **kwargs)
-        return self.id_to_string(document)
+        res = self.db.update_one(query, update, **kwargs)
+        return res.acknowledged
 
     def delete_document(self, query, **kwargs):
         """Delete the document from database."""

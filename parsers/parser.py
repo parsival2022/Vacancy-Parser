@@ -24,11 +24,23 @@ HTTPS = "https"
 HTTP = "http"
 
 class Parser:
+    source_name = "base_parser"
     prefixes = {HTTPS: "https://",
                 HTTP: "http://"}
     headers = {}
-    source_name = "base_parser"
     cache = []
+    current_page = None
+
+    base_url = "https://www.example.com"
+    login_url = None
+    
+    # elements that are used in default perform_login method
+    username_input = (By.ID, "email")
+    password_input = (By.ID, "password")
+    login_btn = (By.XPATH, '//button[text()="Log In"]')
+    login_fails = ((By.XPATH, '//div[contains(@class, "form-group has-error")]'))
+
+
 
     def __init__(self, init_url, db_manager, source_name, use_driver=True, use_request=False, proxies=[]) -> None:
         self.init_url = init_url
@@ -56,31 +68,13 @@ class Parser:
         options.add_argument("--dns-prefetch-disable")
         options.add_argument("--disable-gpu")
         options.add_argument("--disable-gpu-compositing")
-        # options.add_argument("--headless")
+        options.add_argument("--headless")
         # options.add_argument("--disable-software-rasterizer")
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-webrtc")
         # options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
         return webdriver.Chrome(service=Service(ChromeDriverManager(driver_version="128.0.6613.114").install()), options=options)
-    
-    def use_driver_only(self):
-        def decorator(func:Callable):
-            def wrapper(*args, **kwargs):
-                if not self.use_driver:
-                    raise ModeUnacceptableMethod
-                return func(*args, **kwargs)
-            return wrapper
-        return decorator
-    
-    def use_request_only(self):
-        def decorator(func:Callable):
-            def wrapper(*args, **kwargs):
-                if not self.use_request:
-                    raise ModeUnacceptableMethod
-                return func(*args, **kwargs)
-            return wrapper
-        return decorator
    
     def wait(self, t):
         try:
@@ -154,7 +148,9 @@ class Parser:
         res = self.driver.find_element(f_lvl_by, f_lvl_attrs).find_elements(s_lvl_by, s_lvl_attrs)
         return res
     
-    def soup_extract_text_suite(self, soup:BeautifulSoup, *args) -> dict:
+    def soup_extract_text_suite(self, soup:BeautifulSoup=None, *args) -> dict:
+        if not soup:
+            soup = self.parse_page()
         data = {}
         for creds in args:
             data[creds[0]] = soup.find(*creds[1]).get_text(strip=True)
@@ -182,10 +178,6 @@ class Parser:
         res = {'source': self.source_name}
         res.update(d)
         return res
-
-    def insert_to_db(self, data:dict, model_type):
-        d = self.data_formatter(data)
-        return self.db_manager.create_document(d, model_type)
             
     def write_to_file(self, data, filename='parser_data.json'):
         with open(filename, 'w', encoding='utf-8') as file:
@@ -198,5 +190,19 @@ class Parser:
                     file.write(url + '\n')
             else: file.write(data + '\n')
 
-    def parsing_suite(self):
-        pass
+    @repeat_if_fail(NoSuchElementException, DELAY_5)
+    def perform_login(self):
+        lu = self.login_url if self.login_url else self.init_url
+        self.driver.get(lu)
+        self.wait(DELAY_10_15)
+        self.fill_input_element(*self.username_input, self.username)
+        self.fill_input_element(*self.password_input, self.password)
+        self.wait(DELAY_4_8)
+        self.click_on_element(*self.login_btn)
+        try:
+            for fail in self.login_fails:
+                self.driver.find_element(*fail)
+            self.driver.quit()
+        except NoSuchElementException: 
+            pass
+        self.wait(DELAY_15)

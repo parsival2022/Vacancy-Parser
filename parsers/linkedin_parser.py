@@ -5,9 +5,13 @@ from db_manager.mongo_manager import MongoManager
 from db_manager.models import BasicVacancy, Vacancy
 from pydantic import ValidationError
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException
+from selenium.common.exceptions import (NoSuchElementException, 
+                                        ElementNotInteractableException, 
+                                        ElementClickInterceptedException,
+                                        WebDriverException,
+                                        InvalidSessionIdException)
 from selenium.webdriver.common.keys import Keys
-from .decorators import repeat_if_fail
+from .decorators import repeat_if_fail, execute_if_fail
 from .constants import *
 
 VACANCY = "vacancy"
@@ -15,9 +19,12 @@ BASIC_VACANCY = "vacancy_url"
 
 class LinkedinParser(Parser):
     base_url = "https://www.linkedin.com"
-    login_url = base_url + "/checkpoint/lg/login-submit"
     current_page = None
-
+    
+    username_input = (By.ID, "username")
+    password_input = (By.ID, "password")
+    login_btn = (By.XPATH, '//button[contains(@data-litms-control-urn, "login-submit")]')
+    login_fails = ((By.ID, "error-for-username"), (By.ID, "error-for-password"))
     jobs_button = (By.CSS_SELECTOR, '[href="https://www.linkedin.com/jobs/?"]')
     search_loc_input = (By.XPATH, "//input[contains(@id, 'jobs-search-box-location-id-ember')]")
     search_kw_input = (By.XPATH, "//input[contains(@id, 'jobs-search-box-keyword-id-ember')]")
@@ -25,29 +32,12 @@ class LinkedinParser(Parser):
     next_page_numbered = lambda self: (By.CSS_SELECTOR, f'[data-test-pagination-page-btn="{self.current_page + 1}"]')
     next_page_dots = (By.XPATH, '//li[contains(@class, "artdeco-pagination__indicator")]/button/span[text()="…"]')
     skills_btn = (By.XPATH, '//span[text()="Show qualification details"]')
-    job_company = ("company", ("div", {"class": re.compile(r"company-name")}))
-    job_title = ("title", ("div", {"class": re.compile(r"job-title")}))
-    job_description = ("description", ("div", {"class": re.compile(r"jobs-description-content__text")}))
+    job_company = (By.XPATH, '//div[contains(@class, "company-name")]')
+    job_title = (By.XPATH, '//div[contains(@class, "top-card__job-title")]')
+    job_description = (By.ID, 'job-details')
     job_primary = (By.XPATH, '//div[contains(@class,"unified-top-card__primary-description-container")]')
     job_skills = (By.XPATH, '//ul[contains(@class, "job-details-skill-match-status-list")]')
     job_insights = (By.XPATH, '//li[contains(@class, "job-insight--highlight")]')
-
-
-    @repeat_if_fail(NoSuchElementException, DELAY_5)
-    def perform_login(self):
-        self.driver.get(self.init_url)
-        self.wait(DELAY_10_15)
-        self.fill_input_element(By.ID, "username", self.username)
-        self.fill_input_element(By.ID, "password", self.password)
-        self.wait(DELAY_4_8)
-        self.driver.find_element(By.CSS_SELECTOR, '[data-litms-control-urn="login-submit"]').click()
-        try:
-            fail_usn = self.driver.find_element(By.ID, "error-for-username")
-            fail_psw = self.driver.find_element(By.ID, "error-for-password")
-            self.driver.quit()
-        except NoSuchElementException: 
-            pass
-        self.wait(DELAY_15)
 
     @repeat_if_fail(NoSuchElementException, DELAY_5)
     def insert_search_params(self, kw, lc):
@@ -69,7 +59,7 @@ class LinkedinParser(Parser):
             self.fill_input_element(*self.search_loc_input, Keys.ENTER)
             self.wait(DELAY_8_10)
 
-    @repeat_if_fail(NoSuchElementException, DELAY_10)
+    @repeat_if_fail(WebDriverException, 7)
     def perform_jobs_search(self, search_str, loc):
         self.current_page = 1
         self.insert_search_params(search_str, loc)
@@ -96,59 +86,91 @@ class LinkedinParser(Parser):
             except (NoSuchElementException, ElementNotInteractableException):
                 self.current_page = None
 
+    @repeat_if_fail(NoSuchElementException, 5)
+    def extract_job_details(self):
+        currency_signs = ['$', '€', '£', '¥', '₹', '₴']
+        levels = ['Internship', 'Entry level', 'Associate', 'Mid-Senior', 'Director', 'Executive']
+        workplaces = ['On-site', 'Hybrid', 'Remote']
+        employment_types = ["Full-time", "Contract", "Volunteer", "Part-time", "Temporary", "Internship", "Other"]
+        data = {}
+
+        job_primary = self.driver.find_element(*self.job_primary).text.split("·")[0]
+        data["exact_location"] = job_primary
+        job_insights = self.driver.find_element(*self.job_insights).text.split("·")[0].split(" ")
+        for s in job_insights:
+            if any(sign in s for sign in currency_signs):
+                data["salary"] = s
+            if any(_type in s for _type in levels):
+                data["level"] = s
+            if any(_type in s for _type in workplaces):
+                data["workplace_type"] = s
+            if any(_type in s for _type in employment_types):
+                data["employment_type"] = s
+        return data
+    
+    @repeat_if_fail(ElementClickInterceptedException, 5)
+    def extract_job_info(self):
+        data = {}
+        data["description"] = self.driver.find_element(*self.job_description).text
+        data["title"] = self.driver.find_element(*self.job_title).find_element(By.TAG_NAME, 'h1').text
+        data["company"] = self.driver.find_element(*self.job_company).text
+        return data
+    
+    @execute_if_fail(ElementClickInterceptedException, lambda: {"skills": []})
+    def extract_job_skills(self):
+        data = {}
+        skills = []
+        self.click_on_element(*self.skills_btn)
+        self.wait(DELAY_7)
+        job_skills = self.driver_two_level_extr_all(*self.job_skills, By.TAG_NAME, "li") 
+        if len(job_skills) > 0:
+            for skill in job_skills:
+                sk = skill.text.split(" ")[0]
+                skills.append(sk.replace("\nAdd", ""))
+        data["skills"] = skills
+        return data
+
+    @repeat_if_fail(WebDriverException, 7)
     def perform_job_parsing(self, search_str, loc):
-        def create_key(k, v, i):
-            try:
-                data[k] = v[i]
-            except IndexError:
-                pass
-        
-        urls = self.db_manager.get_documents({"location": loc, "keyword": search_str})
+        urls:list[dict] = self.db_manager.get_documents({"location": loc, "keyword": search_str, "completed": False})
         feed = self.driver.current_window_handle
+
         for url in urls:
             self.driver.switch_to.new_window('tab')
             self.driver.get(url["url"])
             self.wait(DELAY_15)
-            soup:BeautifulSoup = self.parse_page()
-            data = self.soup_extract_text_suite(soup, 
-                                            self.job_title, 
-                                            self.job_company,
-                                            self.job_description)
-            job_primary = self.driver.find_element(*self.job_primary).text.split("·")
-            job_insights = self.driver.find_element(*self.job_insights).text.split("·")
-            create_key("exact_location", job_primary, 0)
-            create_key("workplace_type", job_insights, 0)
-            create_key("employment_type", job_insights, 1)
-            create_key("level", job_insights, 2)
-            self.click_on_element(*self.skills_btn)
-            self.wait(DELAY_7)
             try:
-                job_skills = self.driver_two_level_extr_all(*self.job_skills, By.TAG_NAME, "li")
-                skills = []
-                for skill in job_skills:
-                    sk = skill.text.split(" ")[0]
-                    skills.append(sk.replace("\nAdd", ""))
-                data["skills"] = skills
+                el = self.driver.find_element(By.ID, "jobs-feed-discovery-module-0")
+                self.db_manager.delete_document({"url": url["url"]})
+                self.driver.close()
+                self.driver.switch_to.window(feed)
+                return
             except NoSuchElementException:
                 pass
-            print(data)
             try:
-                vacancy = self.db_manager.models[VACANCY].model_validate(data)
-                self.db_manager.update_document({"url": url}, {"$set": vacancy.model_dump()})
+                url.update(self.extract_job_info())
+                url.update(self.extract_job_details())
+                url.update(self.extract_job_skills())
+            except NoSuchElementException:
+                pass 
+            try: 
+                vacancy = self.db_manager.models[VACANCY].model_validate(url)
+                self.db_manager.update_document({"url": url["url"]}, {"$set": vacancy.model_dump()})
             except ValidationError:
                 pass
             self.driver.close()
             self.driver.switch_to.window(feed)
+            self.wait(DELAY_3_6)
             
-            
+    @repeat_if_fail(InvalidSessionIdException, DELAY_60)
     def parsing_suite(self, locations, keywords):           
         self.perform_login()
-        
         for location in locations:
             for keyword in keywords:
                 self.wait(DELAY_10_15)
                 # self.perform_jobs_search(keyword, location)
                 self.perform_job_parsing(keyword, location)
+        self.driver.quit()
                 
             
 

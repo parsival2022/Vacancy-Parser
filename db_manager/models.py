@@ -16,7 +16,7 @@ class BasicVacancy(BaseModel):
     location:str = Field(min_length=5)
     keyword:str = Field(min_length=1)
     source:str = Field(min_length=2)
-    complited:bool = Field(default=False)
+    completed:bool = Field(default=False)
     
 
 
@@ -27,14 +27,33 @@ class BasicVacancy(BaseModel):
             raise ValueError(f"Invalid value for location. Allowed values are {choices}.")
         return value
     
-class Vacancy(BaseModel):
-    complited:bool = Field(default=True)
+class Vacancy(BasicVacancy):
+    completed:bool = Field(default=True)
     exact_location:str = Field(min_length=2)
     title:str = Field(min_length=2)
     company:str = Field(default=NOT_DEFINED)
-    description:str = Field(min_length=50)
+    description:str = Field(min_length=10)
     level:str|list = Field(default=NOT_DEFINED)
     skills:list = Field(default_factory=lambda: [])
     workplace_type:str = Field(default=NOT_DEFINED)
     employment_type:str = Field(default=NOT_DEFINED)
     salary:str = Field(default=NOT_DEFINED)
+    
+    @classmethod
+    def normalize_str(self, str, **kwargs):
+        if len(str) % 2 == 0:
+            h = len(str) // 2
+            f_h = str[:h]
+            s_h = str[h:]
+            if f_h == s_h:
+                str = f_h
+        return str
+        
+    @field_validator('title')
+    def validate_title(cls, title):
+        return cls.normalize_str(title)
+
+    @field_validator('completed')
+    def validate_completed(cls, completed):
+        if not completed:
+            return True
