@@ -1,11 +1,8 @@
-import os
-import time
-import json
-import random
-import requests
+import os, time, json, random, requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 from dotenv import load_dotenv
+from pydantic import BaseModel, Field, field_validator
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -42,14 +39,13 @@ class Parser:
 
 
 
-    def __init__(self, init_url, db_manager, source_name, use_driver=True, use_request=False, proxies=[]) -> None:
-        self.init_url = init_url
+    def __init__(self, init_url=None, db_manager=None, use_driver=True, use_request=False, proxies=[]) -> None:
+        self.init_url = init_url if init_url else self.login_url
         self.db_manager = db_manager
-        self.source_name = source_name
         self.data_file = f"{self.source_name}_data.json"
         self.urls_file = f"{self.source_name}_urls.json"
-        self.username = os.environ.get('EMAIL') or None
-        self.password = os.environ.get('PASSWORD') or None
+        self.username = os.environ.get(self.source_name.upper().replace(" ", "_") + "_USERNAME") or None
+        self.password = os.environ.get(self.source_name.upper().replace(" ", "_") + "_PASSWORD") or None
         self.proxies = proxies
         self.use_driver = use_driver
         self.use_request = use_request
@@ -57,7 +53,6 @@ class Parser:
             self.session = requests.Session()
         if self.use_driver:
             self.driver:webdriver.Chrome = self.create_driver()
-
 
     @repeat_if_fail(requests.exceptions.ChunkedEncodingError, 6)
     def create_driver(self) -> webdriver.Chrome: 
@@ -68,7 +63,7 @@ class Parser:
         options.add_argument("--dns-prefetch-disable")
         options.add_argument("--disable-gpu")
         options.add_argument("--disable-gpu-compositing")
-        options.add_argument("--headless")
+        # options.add_argument("--headless")
         # options.add_argument("--disable-software-rasterizer")
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--disable-dev-shm-usage")
@@ -138,7 +133,7 @@ class Parser:
     
     @repeat_if_fail([TypeError, AttributeError], 5)
     def soup_two_level_extr_all(self, f_lvl_tag, f_lvl_attrs, s_lvl_tag, s_lvl_attrs, page=None) -> list:
-        soup = self.parse_page() if not page else page
+        soup:BeautifulSoup = self.parse_page() if not page else page
         first_level = soup.findChild(f_lvl_tag, f_lvl_attrs)
         second_level = first_level.find_all(s_lvl_tag, s_lvl_attrs)
         return second_level
@@ -166,18 +161,11 @@ class Parser:
                   EC.element_to_be_clickable((by, value)))
         element.click()
 
-
     @repeat_if_fail(NoSuchElementException, 5)
     def fill_input_element(self, by, input, keys):
         input = self.driver.find_element(by, input)
         input.clear()
         input.send_keys(keys)
-
-
-    def data_formatter(self, d:dict) -> dict:
-        res = {'source': self.source_name}
-        res.update(d)
-        return res
             
     def write_to_file(self, data, filename='parser_data.json'):
         with open(filename, 'w', encoding='utf-8') as file:
@@ -190,7 +178,7 @@ class Parser:
                     file.write(url + '\n')
             else: file.write(data + '\n')
 
-    @repeat_if_fail(NoSuchElementException, DELAY_5)
+    @repeat_if_fail(NoSuchElementException, 5)
     def perform_login(self):
         lu = self.login_url if self.login_url else self.init_url
         self.driver.get(lu)
@@ -205,4 +193,4 @@ class Parser:
             self.driver.quit()
         except NoSuchElementException: 
             pass
-        self.wait(DELAY_15)
+        self.wait(15)

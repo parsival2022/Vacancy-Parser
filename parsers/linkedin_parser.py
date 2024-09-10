@@ -1,9 +1,11 @@
-import re
+import re, os
+from datetime import datetime
+from dotenv import load_dotenv
 from .parser import Parser
 from bs4 import BeautifulSoup
 from db_manager.mongo_manager import MongoManager
 from db_manager.models import BasicVacancy, Vacancy
-from pydantic import ValidationError
+from pydantic import BaseModel, Field, field_validator, ValidationError
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import (NoSuchElementException, 
                                         ElementNotInteractableException, 
@@ -14,10 +16,66 @@ from selenium.webdriver.common.keys import Keys
 from .decorators import repeat_if_fail, execute_if_fail
 from .constants import *
 
-VACANCY = "vacancy"
-BASIC_VACANCY = "vacancy_url"
+load_dotenv()
+
+LN_VACANCY = "vacancy"
+LN_BASIC_VACANCY = "basic_vacancy"
+
+PYTHON = "python"
+JAVA = "java"
+JS = "js"
+CPP = "C++"
+
+class BasicVacancy(BaseModel):
+
+    url:str = Field(min_length=10, pattern=r'https?:\/\/[^\s/$.?#].[^\s]*')
+    extr_date:str = Field(default_factory=lambda: datetime.now().strftime(os.environ.get("TIMEFORMAT")))
+    location:str = Field(min_length=5)
+    keyword:str = Field(min_length=1)
+    source:str = Field(min_length=2)
+    completed:bool = Field(default=False)
+    
+    @field_validator('location')
+    def validate_location(cls, value):
+        choices = {EU, UA, USA}
+        if value not in choices:
+            raise ValueError(f"Invalid value for location. Allowed values are {choices}.")
+        return value
+
+    
+class Vacancy(BasicVacancy):
+    completed:bool = Field(default=True)
+    exact_location:str = Field(min_length=2)
+    title:str = Field(min_length=2)
+    company:str = Field(default=NOT_DEFINED)
+    description:str = Field(min_length=10)
+    level:str|list = Field(default=NOT_DEFINED)
+    skills:list = Field(default_factory=lambda: [])
+    workplace_type:str = Field(default=NOT_DEFINED)
+    employment_type:str = Field(default=NOT_DEFINED)
+    salary:str = Field(default=NOT_DEFINED)
+    
+    @classmethod
+    def normalize_str(self, str, **kwargs):
+        if len(str) % 2 == 0:
+            h = len(str) // 2
+            f_h = str[:h]
+            s_h = str[h:]
+            if f_h == s_h:
+                str = f_h
+        return str
+        
+    @field_validator('title')
+    def validate_title(cls, title):
+        return cls.normalize_str(title)
+
+    @field_validator('completed')
+    def validate_completed(cls, completed):
+        if not completed:
+            return True
 
 class LinkedinParser(Parser):
+    source_name = "Linkedin"
     base_url = "https://www.linkedin.com"
     current_page = None
     
@@ -39,7 +97,7 @@ class LinkedinParser(Parser):
     job_skills = (By.XPATH, '//ul[contains(@class, "job-details-skill-match-status-list")]')
     job_insights = (By.XPATH, '//li[contains(@class, "job-insight--highlight")]')
 
-    @repeat_if_fail(NoSuchElementException, DELAY_5)
+    @repeat_if_fail(NoSuchElementException, 5)
     def insert_search_params(self, kw, lc):
         self.click_on_element(*self.jobs_button)
         self.wait(DELAY_10_15)
@@ -55,7 +113,7 @@ class LinkedinParser(Parser):
         location_txt = self.driver.find_element(*self.search_loc_input).get_attribute("data-job-search-box-location-input-trigger")
         if not lc == location_txt:
             self.fill_input_element(*self.search_loc_input, lc)
-            self.wait(DELAY_3)
+            self.wait(3)
             self.fill_input_element(*self.search_loc_input, Keys.ENTER)
             self.wait(DELAY_8_10)
 
@@ -65,16 +123,15 @@ class LinkedinParser(Parser):
         self.insert_search_params(search_str, loc)
         while self.current_page:
             try:
-                self.wait(DELAY_15)
+                self.wait(15)
                 raw_jobs = self.soup_two_level_extr_all('ul', {'class': "scaffold-layout__list-container"}, 'li', {})
                 for job in raw_jobs:
                     try:
                         j_id = job['data-occludable-job-id']
                         j_url = f"{self.base_url}/jobs/view/{j_id}/"
-                        self.append_to_file(f"{self.source_name}_{loc}_{search_str}_urls.txt", j_url)
                         if not self.db_manager.check_if_exist({"url": j_url}):
                             data = {"url": j_url, "location": loc, "keyword": search_str, "source":self.source_name}
-                            self.db_manager.create_document(data, BASIC_VACANCY)
+                            self.db_manager.create_document(data, LN_BASIC_VACANCY)
                     except KeyError: continue
                 self.wait(DELAY_4_8)
                 try:
@@ -121,7 +178,7 @@ class LinkedinParser(Parser):
         data = {}
         skills = []
         self.click_on_element(*self.skills_btn)
-        self.wait(DELAY_7)
+        self.wait(7)
         job_skills = self.driver_two_level_extr_all(*self.job_skills, By.TAG_NAME, "li") 
         if len(job_skills) > 0:
             for skill in job_skills:
@@ -138,7 +195,7 @@ class LinkedinParser(Parser):
         for url in urls:
             self.driver.switch_to.new_window('tab')
             self.driver.get(url["url"])
-            self.wait(DELAY_15)
+            self.wait(15)
             try:
                 el = self.driver.find_element(By.ID, "jobs-feed-discovery-module-0")
                 self.db_manager.delete_document({"url": url["url"]})
@@ -154,33 +211,31 @@ class LinkedinParser(Parser):
             except NoSuchElementException:
                 pass 
             try: 
-                vacancy = self.db_manager.models[VACANCY].model_validate(url)
+                vacancy = self.db_manager.models[LN_VACANCY].model_validate(url)
                 self.db_manager.update_document({"url": url["url"]}, {"$set": vacancy.model_dump()})
             except ValidationError:
                 pass
             self.driver.close()
             self.driver.switch_to.window(feed)
+            self.click_on_element(*self.jobs_button)
             self.wait(DELAY_3_6)
             
-    @repeat_if_fail(InvalidSessionIdException, DELAY_60)
+    @repeat_if_fail(InvalidSessionIdException, 60)
     def parsing_suite(self, locations, keywords):           
         self.perform_login()
         for location in locations:
             for keyword in keywords:
                 self.wait(DELAY_10_15)
-                # self.perform_jobs_search(keyword, location)
+                self.perform_jobs_search(keyword, location)
                 self.perform_job_parsing(keyword, location)
         self.driver.quit()
                 
             
 
 if __name__ == "__main__":
-    locations = (USA, EU)
-    keywords = (PYTHON, JAVA, JS) 
-    db_manager = MongoManager("Vacancies", {VACANCY: Vacancy, BASIC_VACANCY: BasicVacancy})
+    locations = (UA, USA, EU)
+    keywords = (PYTHON, JAVA, JS, CPP) 
+    db_manager = MongoManager("Vacancies", {LN_VACANCY: Vacancy, LN_BASIC_VACANCY: BasicVacancy})
     linkedin = LinkedinParser("https://www.linkedin.com/login/uk", 
-                              db_manager, 
-                              "Linkedin", 
-                              use_driver=True,
-                              use_request=True)
+                              db_manager=db_manager)
     linkedin.parsing_suite(locations, keywords)

@@ -34,12 +34,7 @@ class MongoManager:
 
         CLIENT = pymongo.MongoClient(connection_string, maxPoolSize=400)
         cls.DB = CLIENT[db_name]
-        print(f"Connected to MongoDB database: {db_name}")
-
-        
-
-    def register_models(self, models:dict):
-        self.models = models
+        print(f"Connected to MongoDB database: {db_name}")   
 
     def id_to_string(self, document):
         """Changes _id field of returned document from ObjectId to string."""
