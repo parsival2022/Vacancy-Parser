@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 from .parser import Parser
 from bs4 import BeautifulSoup
 from db_manager.mongo_manager import MongoManager
-from db_manager.models import BasicVacancy, Vacancy
 from pydantic import BaseModel, Field, field_validator, ValidationError
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import (NoSuchElementException, 
