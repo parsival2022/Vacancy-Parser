@@ -1,8 +1,6 @@
 import os
 from datetime import datetime
 from dotenv import load_dotenv
-from .parser import Parser
-from bs4 import BeautifulSoup
 from db_manager.mongo_manager import MongoManager
 from pydantic import BaseModel, Field, field_validator, ValidationError
 from selenium.common.exceptions import (NoSuchElementException, 
@@ -12,8 +10,9 @@ from selenium.common.exceptions import (NoSuchElementException,
                                         InvalidSessionIdException)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from .decorators import repeat_if_fail, execute_if_fail
 from .constants import *
+from .decorators import repeat_if_fail, execute_if_fail
+from .parser import Parser
 
 load_dotenv()
 
@@ -28,7 +27,7 @@ class BasicVacancy(BaseModel):
     
     @field_validator('location')
     def validate_location(cls, value):
-        choices = {EU, UA, USA}
+        choices = {EU, UA, USA, UK}
         if value not in choices:
             raise ValueError(f"Invalid value for location. Allowed values are {choices}.")
         return value
@@ -47,13 +46,10 @@ class Vacancy(BasicVacancy):
     salary:str = Field(default=NOT_DEFINED)
     
     @classmethod
-    def normalize_str(self, str, **kwargs):
+    def normalize_str(self, str):
         if len(str) % 2 == 0:
             h = len(str) // 2
-            f_h = str[:h]
-            s_h = str[h:]
-            if f_h == s_h:
-                str = f_h
+            if str[:h] == str[h:]: str = str[:h]        
         return str
         
     @field_validator('title')
