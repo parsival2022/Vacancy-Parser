@@ -1,34 +1,22 @@
-import os, re
-from datetime import datetime
 from bs4 import BeautifulSoup
 from db_manager.mongo_manager import MongoManager
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, model_validator, ValidationError
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException
+from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException, WebDriverException
 from selenium.webdriver.common.keys import Keys
-from .decorators import repeat_if_fail
+from .decorators import repeat_if_fail, ignore_if_fail
 from .constants import *
+from .models import BasicVacancyModel
 from .parser import Parser
 
-class DjinniBasicVacancy(BaseModel):
-    url:str = Field(min_length=10, pattern=r'https?:\/\/[^\s/$.?#].[^\s]*')
-    extr_date:str = Field(default_factory=lambda: datetime.now().strftime(os.environ.get("TIMEFORMAT")))
-    title:str = Field(min_length=2)
+class DjinniBasicVacancy(BasicVacancyModel):
     location:str = Field(min_length=5, default="Ukraine")
-    keyword:str = Field(min_length=1)
-    company:str = Field(default=NOT_DEFINED, min_length=2)
-    eng_level:str|list = Field(default=NOT_DEFINED, min_length=5)
-    workplace_type:str = Field(default=NOT_DEFINED)
-    source:str = Field(min_length=2)
-    description:str = Field(min_length=10)
-    completed:bool = Field(default=False)
 
 class DjinniParser(Parser):
     source_name = "Djinni"
     base_url = "https://djinni.co"
     login_url = base_url + "/login"
     jobs_url = base_url + "/jobs/"
-    headers = DJINNI_HEADERS
 
     english_btn = (By.XPATH, '//a[contains(@href, "/set_lang?code=en&next=%2Flogin")]')
     username_input = (By.ID, "email")
@@ -42,6 +30,7 @@ class DjinniParser(Parser):
     job_upper_details = ("div", {"class": "d-flex flex-wrap align-items-center gap-1 fs-5 mb-2 text-secondary"})
     job_lower_details = ("div", {"class": "fw-medium d-flex flex-wrap align-items-center gap-1"})
     job_descr = ("span", {"class": "js-original-text d-none"})
+    job_extra_info = ("ul", {"id": "job_extra_info"})
 
     @repeat_if_fail(NoSuchElementException, 5)
     def perform_login(self):
@@ -54,7 +43,8 @@ class DjinniParser(Parser):
     def extract_job_details(self, job:BeautifulSoup):
         data = {}
         eng_levels = ['Advanced', 'Fluent', 'Beginner', 'Elementary', 'Intermediate']
-        workplaces = ['Remote', 'Full Remote', 'Part-time', 'Office']
+        workplaces = ['Remote', 'Full Remote', 'Office', 'Hybrid-Remote']
+        employment_types = ['Part-time']
         title = job.find("a", {"class": "job-item__title-link"})
         data["url"] = self.base_url + title.get("href")
         data["title"] = title.get_text(strip=True)
@@ -68,6 +58,8 @@ class DjinniParser(Parser):
                 data["eng_level"] = d
             if any(d in workplace for workplace in workplaces):
                 data["workplace_type"] = d
+            if any(d in emp_type for emp_type in employment_types):
+                data["employment_type"] = d
         return data
 
     def perform_jobs_search(self, keywords):
@@ -97,11 +89,39 @@ class DjinniParser(Parser):
                         self.current_page += 1
                 except (NoSuchElementException, ElementNotInteractableException):
                     self.current_page = None
+    @ignore_if_fail(IndexError)
+    def extract_skills(self, soup):
+        skills:str = soup.find(*self.job_extra_info).find_all("li", {"class": "mb-1"})[1]
+        return [skill.strip() for skill in skills.split(",")]
+    
+    @ignore_if_fail(IndexError)
+    def extract_salary(self, soup):
+        skills = soup.find(*self.job_extra_info).find_all("li", {"class": "mb-1"})[1]
+        return [skill.strip() for skill in skills.get_text(strip=True).split(",")]
+
+    @repeat_if_fail(WebDriverException, 7)
+    def perform_job_parsing(self, keywords):
+        for keyword in keywords:
+            urls:list[dict] = self.db_manager.get_documents({"keyword": keyword, "completed": False})
+            jobs_pg = self.driver.current_window_handle
+            for url in urls:
+                self.driver.switch_to.new_window('tab')
+                self.driver.get(url["url"])
+                self.wait(DELAY_5_10)
+                soup:BeautifulSoup = self.parse_page()
+                skills = self.extract_skills(soup)
+                if skills:
+                    self.db_manager.update_document({"url": url["url"]}, {"$set": {"skills": skills}})
+                self.driver.close()
+                self.driver.switch_to.window(jobs_pg)
+                self.click_on_element(*self.all_jobs_btn)
+                self.wait(DELAY_3_6)
 
     @repeat_if_fail(NoSuchElementException, 5)
     def parsing_suite(self, keywords):
         self.perform_login()
         self.perform_jobs_search(keywords)
+        self.perform_job_parsing(keywords)
         self.driver.quit()
 
 PYTHON = "Python"
@@ -115,8 +135,3 @@ DJ_MODELS = {DJ_BASE_VACANCY: DjinniBasicVacancy}
 DJ_COLLECTION = "Vacancies"
 DJ_KEYWORDS = (PYTHON, JAVA, JS, CPP)
                 
-
-if __name__ == "__main__":
-    db_manager = MongoManager(DJ_COLLECTION, DJ_MODELS)
-    djinni = DjinniParser(db_manager=db_manager)
-    djinni.parsing_suite(DJ_KEYWORDS)

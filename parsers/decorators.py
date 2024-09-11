@@ -28,3 +28,13 @@ def execute_if_fail(exception:Exception, exec:Callable) -> Any:
                     return exec()
         return wrapper
     return decorator
+
+def ignore_if_fail(exception:Exception) -> Any:
+    def decorator(func:Callable):
+        def wrapper(*args, **kwargs):
+                try:
+                    return func(*args, **kwargs)
+                except exception:
+                    pass
+        return wrapper
+    return decorator
