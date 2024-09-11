@@ -77,6 +77,17 @@ class Parser:
         except TypeError:
             _t = t
         time.sleep(_t)
+
+    def write_to_file(self, data, filename='parser_data.json'):
+        with open(filename, 'w', encoding='utf-8') as file:
+            json.dump(data, file, ensure_ascii=False, indent=4)
+
+    def append_to_file(self, filename, data:Iterable[str]|str):
+        with open(filename, 'a') as file:
+            if isinstance(data, (tuple, set, list)):
+                for url in data:
+                    file.write(url + '\n')
+            else: file.write(data + '\n')
         
     def add_prefix(self, url:str, mode:str) -> str:
         if not "://" in url:
@@ -166,17 +177,6 @@ class Parser:
         input = self.driver.find_element(by, input)
         input.clear()
         input.send_keys(keys)
-            
-    def write_to_file(self, data, filename='parser_data.json'):
-        with open(filename, 'w', encoding='utf-8') as file:
-            json.dump(data, file, ensure_ascii=False, indent=4)
-
-    def append_to_file(self, filename, data:Iterable[str]|str):
-        with open(filename, 'a') as file:
-            if isinstance(data, (tuple, set, list)):
-                for url in data:
-                    file.write(url + '\n')
-            else: file.write(data + '\n')
 
     @repeat_if_fail(NoSuchElementException, 5)
     def perform_login(self):

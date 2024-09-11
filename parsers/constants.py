@@ -4,13 +4,6 @@ DELAY_5_10 = (5, 10)
 DELAY_8_10 = (8, 10)
 DELAY_10_15 = (10, 15)
 
-EU = "European Union"
-USA = "United States"
-UA = "Ukraine"
-UK = "United Kingdom"
-
-
-
 NOT_DEFINED = "This requirement wasn't defined in vacancy."
 
 DJINNI_HEADERS = {

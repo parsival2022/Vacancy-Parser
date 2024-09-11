@@ -4,18 +4,11 @@ from bs4 import BeautifulSoup
 from db_manager.mongo_manager import MongoManager
 from pydantic import BaseModel, Field, field_validator
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException, WebDriverException
+from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException
 from selenium.webdriver.common.keys import Keys
 from .decorators import repeat_if_fail
 from .constants import *
 from .parser import Parser
-
-DJ_BASE_VACANCY = "base_vacancy"
-
-PYTHON = "Python"
-JAVA = "Java"
-JS = "JavaScript"
-CPP = "CPP"
 
 class DjinniBasicVacancy(BaseModel):
     url:str = Field(min_length=10, pattern=r'https?:\/\/[^\s/$.?#].[^\s]*')
@@ -110,10 +103,20 @@ class DjinniParser(Parser):
         self.perform_login()
         self.perform_jobs_search(keywords)
         self.driver.quit()
+
+PYTHON = "Python"
+JAVA = "Java"
+JS = "JavaScript"
+CPP = "CPP"
+
+DJ_BASE_VACANCY = "base_vacancy"
+
+DJ_MODELS = {DJ_BASE_VACANCY: DjinniBasicVacancy}
+DJ_COLLECTION = "Vacancies"
+DJ_KEYWORDS = (PYTHON, JAVA, JS, CPP)
                 
 
 if __name__ == "__main__":
-    db_manager = MongoManager("Vacancies", {DJ_BASE_VACANCY: DjinniBasicVacancy})
-    djinni = DjinniParser(db_manager=db_manager, use_request=True)
-    keywords = (PYTHON, JAVA, JS, CPP)
-    djinni.parsing_suite(keywords)
+    db_manager = MongoManager(DJ_COLLECTION, DJ_MODELS)
+    djinni = DjinniParser(db_manager=db_manager)
+    djinni.parsing_suite(DJ_KEYWORDS)

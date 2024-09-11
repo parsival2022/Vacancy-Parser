@@ -1,29 +1,21 @@
-import re, os
+import os
 from datetime import datetime
 from dotenv import load_dotenv
 from .parser import Parser
 from bs4 import BeautifulSoup
 from db_manager.mongo_manager import MongoManager
 from pydantic import BaseModel, Field, field_validator, ValidationError
-from selenium.webdriver.common.by import By
 from selenium.common.exceptions import (NoSuchElementException, 
                                         ElementNotInteractableException, 
                                         ElementClickInterceptedException,
                                         WebDriverException,
                                         InvalidSessionIdException)
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from .decorators import repeat_if_fail, execute_if_fail
 from .constants import *
 
 load_dotenv()
-
-LN_VACANCY = "vacancy"
-LN_BASIC_VACANCY = "basic_vacancy"
-
-PYTHON = "python"
-JAVA = "java"
-JS = "js"
-CPP = "C++"
 
 class BasicVacancy(BaseModel):
 
@@ -76,6 +68,7 @@ class Vacancy(BasicVacancy):
 class LinkedinParser(Parser):
     source_name = "Linkedin"
     base_url = "https://www.linkedin.com"
+    login_url = "https://www.linkedin.com/login/uk"
     current_page = None
     
     username_input = (By.ID, "username")
@@ -228,13 +221,26 @@ class LinkedinParser(Parser):
                 self.perform_jobs_search(keyword, location)
                 self.perform_job_parsing(keyword, location)
         self.driver.quit()
-                
-            
+
+LN_VACANCY = "vacancy"
+LN_BASIC_VACANCY = "basic_vacancy"
+
+PYTHON = "python"
+JAVA = "java"
+JS = "js"
+CPP = "C++"
+
+EU = "European Union"
+USA = "United States"
+UA = "Ukraine"
+UK = "United Kingdom"
+
+LN_COLLECTION = "Vacancies"
+LN_MODELS = {LN_VACANCY: Vacancy, LN_BASIC_VACANCY: BasicVacancy} 
+LN_LOCATIONS = (UA, USA, EU) 
+LN_KEYWORDS = (PYTHON, JAVA, JS, CPP)
 
 if __name__ == "__main__":
-    locations = (UA, USA, EU)
-    keywords = (PYTHON, JAVA, JS, CPP) 
-    db_manager = MongoManager("Vacancies", {LN_VACANCY: Vacancy, LN_BASIC_VACANCY: BasicVacancy})
-    linkedin = LinkedinParser("https://www.linkedin.com/login/uk", 
-                              db_manager=db_manager)
-    linkedin.parsing_suite(locations, keywords)
+    db_manager = MongoManager(LN_COLLECTION, LN_MODELS)
+    linkedin = LinkedinParser(db_manager=db_manager)
+    linkedin.parsing_suite(LN_LOCATIONS, LN_KEYWORDS)

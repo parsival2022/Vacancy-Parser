@@ -12,5 +12,5 @@ class NoDatabaseCredentialsProvided(Exception):
     
 class NoModelsRegistered(Exception):
         message = """
-               No models were registered in class inctanse. Please call 
+               No models were registered in class inctanse. Please provide dict with your models.
               """
