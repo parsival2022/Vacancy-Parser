@@ -48,6 +48,10 @@ class MongoManager:
         for el in cursor:
             res.append(self.id_to_string(el))
         return res
+    
+    def aggregate(self, pipeline):
+        res = self.db.aggregate(pipeline)
+        return res
 
     def check_if_exist(self, query):
         res = self.db.count_documents(query)

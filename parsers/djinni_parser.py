@@ -1,10 +1,11 @@
 from bs4 import BeautifulSoup
 from db_manager.mongo_manager import MongoManager
 from pydantic import BaseModel, Field, model_validator, ValidationError
+from requests.exceptions import ConnectionError
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException, WebDriverException
 from selenium.webdriver.common.keys import Keys
-from .decorators import repeat_if_fail, ignore_if_fail
+from .decorators import repeat_if_fail, ignore_if_fail, execute_if_fail
 from .constants import *
 from .models import BasicVacancyModel
 from .parser import Parser
@@ -61,7 +62,7 @@ class DjinniParser(Parser):
             if any(d in emp_type for emp_type in employment_types):
                 data["employment_type"] = d
         return data
-
+    
     def perform_jobs_search(self, keywords):
         for keyword in keywords:
             self.click_on_element(*self.jobs_btn)
@@ -89,17 +90,15 @@ class DjinniParser(Parser):
                         self.current_page += 1
                 except (NoSuchElementException, ElementNotInteractableException):
                     self.current_page = None
-    @ignore_if_fail(IndexError)
-    def extract_skills(self, soup):
-        skills:str = soup.find(*self.job_extra_info).find_all("li", {"class": "mb-1"})[1]
-        return [skill.strip() for skill in skills.split(",")]
-    
-    @ignore_if_fail(IndexError)
-    def extract_salary(self, soup):
-        skills = soup.find(*self.job_extra_info).find_all("li", {"class": "mb-1"})[1]
-        return [skill.strip() for skill in skills.get_text(strip=True).split(",")]
 
-    @repeat_if_fail(WebDriverException, 7)
+    @execute_if_fail((IndexError, TypeError), lambda: None)
+    def extract_skills(self, soup):
+        skills:str = soup.find(*self.job_extra_info).find_all("li", {"class": "mb-1"})[1].get_text(strip=True)
+        return [skill.strip() for skill in skills.split(",")]
+
+
+    @repeat_if_fail((WebDriverException, ElementNotInteractableException), 7)
+    @ignore_if_fail(ElementNotInteractableException)
     def perform_job_parsing(self, keywords):
         for keyword in keywords:
             urls:list[dict] = self.db_manager.get_documents({"keyword": keyword, "completed": False})
@@ -107,20 +106,20 @@ class DjinniParser(Parser):
             for url in urls:
                 self.driver.switch_to.new_window('tab')
                 self.driver.get(url["url"])
-                self.wait(DELAY_5_10)
+                self.wait(DELAY_10_15)
                 soup:BeautifulSoup = self.parse_page()
                 skills = self.extract_skills(soup)
                 if skills:
-                    self.db_manager.update_document({"url": url["url"]}, {"$set": {"skills": skills}})
+                    self.db_manager.update_document({"url": url["url"]}, {"$set": {"skills": skills, "completed": True}})
                 self.driver.close()
                 self.driver.switch_to.window(jobs_pg)
-                self.click_on_element(*self.all_jobs_btn)
-                self.wait(DELAY_3_6)
+                # self.click_on_element(*self.all_jobs_btn)
+                self.wait(DELAY_4_8)
 
-    @repeat_if_fail(NoSuchElementException, 5)
+    @repeat_if_fail((NoSuchElementException, ConnectionError), 5)
     def parsing_suite(self, keywords):
         self.perform_login()
-        self.perform_jobs_search(keywords)
+        # self.perform_jobs_search(keywords)
         self.perform_job_parsing(keywords)
         self.driver.quit()
 
