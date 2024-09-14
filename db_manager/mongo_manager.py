@@ -51,7 +51,7 @@ class MongoManager:
     
     def aggregate(self, pipeline):
         res = self.db.aggregate(pipeline)
-        return res
+        return self.to_list(res)
 
     def check_if_exist(self, query):
         res = self.db.count_documents(query)

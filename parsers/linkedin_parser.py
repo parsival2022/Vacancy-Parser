@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
 from dotenv import load_dotenv
-from db_manager.mongo_manager import MongoManager
 from pydantic import BaseModel, Field, field_validator, ValidationError
 from selenium.common.exceptions import (NoSuchElementException, 
                                         ElementNotInteractableException, 
@@ -203,10 +202,10 @@ class LinkedinParser(Parser):
 LN_VACANCY = "vacancy"
 LN_BASIC_VACANCY = "basic_vacancy"
 
-PYTHON = "python"
-JAVA = "java"
-JS = "js"
-CPP = "C++"
+PYTHON_KWL = CLUSTERS[PYTHON]["keywords"]["ln_kw"]
+JAVA_KWL = CLUSTERS[JAVA]["keywords"]["ln_kw"]
+JS_KWL = CLUSTERS[JS]["keywords"]["ln_kw"]
+CPP_KWL = CLUSTERS[CPP]["keywords"]["ln_kw"]
 
 EU = "European Union"
 USA = "United States"
@@ -215,6 +214,6 @@ UK = "United Kingdom"
 
 LN_COLLECTION = "Vacancies"
 LN_MODELS = {LN_VACANCY: Vacancy, LN_BASIC_VACANCY: BasicVacancy} 
-LN_LOCATIONS = (UA, USA, EU) 
-LN_KEYWORDS = (PYTHON, JAVA, JS, CPP)
+LN_LOCATIONS = (UA, USA, EU, UK) 
+LN_KEYWORDS = (PYTHON_KWL, JAVA_KWL, JS_KWL, CPP_KWL)
 

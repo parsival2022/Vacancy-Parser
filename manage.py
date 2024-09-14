@@ -10,6 +10,7 @@ from parsers.djinni_parser import (DjinniParser,
                                    DJ_MODELS,
                                    DJ_KEYWORDS)
 from parsers.constants import *
+from statistic_manager.statistic_manager import StatisticManager as SM
 
 
 @click.group()
@@ -27,6 +28,12 @@ def launch_djinni_parsing():
     db_manager = MongoManager(DJ_COLLECTION, DJ_MODELS)
     djinni = DjinniParser(db_manager=db_manager)
     djinni.parsing_suite(DJ_KEYWORDS)
+
+@cli.command()
+def get_all_levels():
+    db_m = MongoManager(LN_COLLECTION)
+    sm = SM(db_manager=db_m)
+    print(sm.get_sources_for_clusters())
 
 if __name__ == "__main__":
     cli()

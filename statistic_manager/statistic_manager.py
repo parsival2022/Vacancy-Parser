@@ -1,47 +1,30 @@
 from db_manager.mongo_manager import MongoManager
 from parsers.linkedin_parser import LN_KEYWORDS
 from parsers.djinni_parser import DJ_KEYWORDS
+from parsers.constants import *
 
-PYTHON_CLUSTER = "Python"
-JAVA_CLUSTER = "Java"
-JS_CLUSTER = "JS"
-CPP_CLUSTER = "C++"
-
-LN_PYTHON, LN_JAVA, LN_JS, LN_CPP = LN_KEYWORDS
-DJ_PYTHON, DJ_JAVA, DJ_JS, DJ_CPP = DJ_KEYWORDS
 
 class StatisticManager:
-    clusters = {
-        PYTHON_CLUSTER: {"ln_kw": LN_PYTHON,
-                         "dj_kw": DJ_PYTHON},
-        JAVA_CLUSTER: {"ln_kw": LN_JAVA,
-                       "dj_kw": DJ_JAVA},
-        JS_CLUSTER: {"ln_kw": LN_JS,
-                     "dj_kw": DJ_JS},
-        CPP_CLUSTER: {"ln_kw": LN_CPP,
-                      "dj_kw": DJ_CPP}
-    }
+    clusters = CLUSTERS
+
     def __init__(self, db_manager) -> None:
         self.db_manager:MongoManager = db_manager
 
-    def cluster_count(self, cluster):
-        ln_res = self.db_manager.count({"keyword": self.clusters[cluster]["ln_kw"]})
-        dj_res = self.db_manager.count({"keyword": self.clusters[cluster]["dj_kw"]})
-        return ln_res + dj_res
+    def cluster_count(self, cluster_key):
+        res = self.db_manager.count({"clusters": self.clusters[cluster_key]["name"]})
+        return res
     
     def count_clusters(self):
         data = {}
-        for cluster in self.clusters.keys():
-            data[cluster] = self.cluster_count(cluster)
+        for cluster_key in self.clusters.keys():
+            data[cluster_key] = self.cluster_count(cluster_key)
         return data
     
-    def get_stats_for_cluster(self, cluster, key):
+    def get_stats_for_cluster(self, cluster_key, key):
+        data = {}
         pipeline = [  
             {"$match": {
-                "keyword": {
-                    "$in": [cluster["ln_kw"], cluster["dj_kw"]]
-                    }
-                }},
+                "clusters": self.clusters[cluster_key]["name"]}},
             {"$unwind": f"${key}"},
             {"$group": {
                     "_id": f"${key}",  
@@ -50,13 +33,18 @@ class StatisticManager:
             {"$sort": { "count": -1 }} 
             ]
         res = self.db_manager.aggregate(pipeline) 
-        return res 
+        for m_r in [{("Not defined" if r["_id"] == NOT_DEFINED else r["_id"]): r["count"]} for r in res]:
+            data.update(m_r)
+        return data
     
     def get_stats_for_clusters(self, key):
         data = {}
-        for k, v in self.clusters.items():
-            data[k] = self.get_stats_for_cluster(v, key)
+        for cluster_key in self.clusters.keys():
+            data[cluster_key] = self.get_stats_for_cluster(cluster_key, key)
         return data
+    
+    def get_sources_for_clusters(self):
+        return self.get_stats_for_clusters("source")
     
     def get_skills_for_clusters(self):
         return self.get_stats_for_clusters("skills")
@@ -69,6 +57,23 @@ class StatisticManager:
     
     def get_location_for_clusters(self):
         return self.get_stats_for_clusters("location")
+    
+    def get_technologies_for_clusters(self):
+        filt_res = {}
+        other_d = {}
+        res = self.get_stats_for_clusters("technologies")
+        for cl_k in self.clusters.keys():
+            data = {}
+            for k, v in res[cl_k].items():
+                if k in self.clusters[cl_k]["technologies"]:
+                    data[k] = v
+                elif k in OTHER_TECHS:
+                    other_d[k] = v
+            filt_res[cl_k] = data
+        filt_res.update({"other": other_d})
+        return filt_res
+    
+
 
 
  

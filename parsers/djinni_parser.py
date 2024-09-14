@@ -119,18 +119,18 @@ class DjinniParser(Parser):
     @repeat_if_fail((NoSuchElementException, ConnectionError), 5)
     def parsing_suite(self, keywords):
         self.perform_login()
-        # self.perform_jobs_search(keywords)
+        self.perform_jobs_search(keywords)
         self.perform_job_parsing(keywords)
         self.driver.quit()
 
-PYTHON = "Python"
-JAVA = "Java"
-JS = "JavaScript"
-CPP = "CPP"
+PYTHON_KWD = CLUSTERS[PYTHON]["keywords"]["dj_kw"]
+JAVA_KWD = CLUSTERS[JAVA]["keywords"]["dj_kw"]
+JS_KWD = CLUSTERS[JS]["keywords"]["dj_kw"]
+CPP_KWD = CLUSTERS[CPP]["keywords"]["dj_kw"]
 
 DJ_BASE_VACANCY = "base_vacancy"
 
 DJ_MODELS = {DJ_BASE_VACANCY: DjinniBasicVacancy}
 DJ_COLLECTION = "Vacancies"
-DJ_KEYWORDS = (PYTHON, JAVA, JS, CPP)
+DJ_KEYWORDS = (PYTHON_KWD, JAVA_KWD, JS_KWD, CPP_KWD)
                 
