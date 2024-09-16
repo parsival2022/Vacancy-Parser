@@ -1,4 +1,4 @@
-import click
+import click, logging, asyncio, sys
 from db_manager.mongo_manager import MongoManager
 from parsers.linkedin_parser import (LinkedinParser, 
                                      LN_COLLECTION, 
@@ -11,6 +11,7 @@ from parsers.djinni_parser import (DjinniParser,
                                    DJ_KEYWORDS)
 from parsers.constants import *
 from statistic_manager.statistic_manager import StatisticManager as SM
+from bot.bot import main
 
 
 @click.group()
@@ -30,10 +31,17 @@ def launch_djinni_parsing():
     djinni.parsing_suite(DJ_KEYWORDS)
 
 @cli.command()
-def get_all_levels():
+def get_chart():
     db_m = MongoManager(LN_COLLECTION)
     sm = SM(db_manager=db_m)
-    print(sm.get_sources_for_clusters())
+    stats = sm.get_levels_for_clusters()
+    print(stats)
+    sm.generate_pie_chart(stats)
+
+@cli.command()
+def start_bot():
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    asyncio.run(main())
 
 if __name__ == "__main__":
     cli()

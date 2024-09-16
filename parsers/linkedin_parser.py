@@ -151,7 +151,7 @@ class LinkedinParser(Parser):
         job_skills = self.driver_two_level_extr_all(*self.job_skills, By.TAG_NAME, "li") 
         if len(job_skills) > 0:
             for skill in job_skills:
-                sk = skill.text.split(" ")[0]
+                sk = skill.text
                 skills.append(sk.replace("\nAdd", ""))
         data["skills"] = skills
         return data
