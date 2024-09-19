@@ -13,7 +13,7 @@ from selenium.webdriver.chrome.options import Options
 from typing import Callable, Iterable
 from webdriver_manager.chrome import ChromeDriverManager
 from .decorators import repeat_if_fail
-from .constants import *
+from clusters import *
 from .errors import ModeUnacceptableMethod, NoRequiredParameterProvided
 
 load_dotenv()
@@ -63,8 +63,8 @@ class Parser:
         options.add_argument("--dns-prefetch-disable")
         options.add_argument("--disable-gpu")
         options.add_argument("--disable-gpu-compositing")
-        options.add_argument("--headless")
-        # options.add_argument("--disable-software-rasterizer")
+        # options.add_argument("--headless")
+        options.add_argument("--disable-software-rasterizer")
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-webrtc")
@@ -182,10 +182,10 @@ class Parser:
     def perform_login(self):
         lu = self.login_url if self.login_url else self.init_url
         self.driver.get(lu)
-        self.wait(DELAY_10_15)
+        self.wait((10, 15))
         self.fill_input_element(*self.username_input, self.username)
         self.fill_input_element(*self.password_input, self.password)
-        self.wait(DELAY_4_8)
+        self.wait((4, 8))
         self.click_on_element(*self.login_btn)
         try:
             for fail in self.login_fails:

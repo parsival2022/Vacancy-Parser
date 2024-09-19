@@ -1,7 +1,7 @@
 import os, re
 from datetime import datetime
-from pydantic import BaseModel, Field, model_validator, field_validator
-from .constants import *
+from pydantic import BaseModel, Field, model_validator, field_validator 
+from clusters import *
 
 class BasicVacancyModel(BaseModel):
     url:str = Field(min_length=10, pattern=r'https?:\/\/[^\s/$.?#].[^\s]*')
@@ -53,6 +53,9 @@ class BasicVacancyModel(BaseModel):
             for v in CLUSTERS.values():
                 if tech in v["technologies"] and not v["name"] in self.clusters:
                     self.clusters.append(v["name"])
+        for skill in self.skills:
+            if skill in self.technologies:
+                self.skills.remove(skill)
         return self
     
     @classmethod

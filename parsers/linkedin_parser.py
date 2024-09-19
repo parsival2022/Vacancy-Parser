@@ -9,7 +9,7 @@ from selenium.common.exceptions import (NoSuchElementException,
                                         InvalidSessionIdException)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from .constants import *
+from clusters import *
 from .decorators import repeat_if_fail, execute_if_fail
 from .models import BasicVacancyModel
 from .parser import Parser
@@ -17,7 +17,6 @@ from .parser import Parser
 load_dotenv()
 
 class BasicVacancy(BaseModel):
-
     url:str = Field(min_length=10, pattern=r'https?:\/\/[^\s/$.?#].[^\s]*')
     extr_date:str = Field(default_factory=lambda: datetime.now().strftime(os.environ.get("TIMEFORMAT")))
     location:str = Field(min_length=5)
@@ -69,22 +68,22 @@ class LinkedinParser(Parser):
     @repeat_if_fail(NoSuchElementException, 5)
     def insert_search_params(self, kw, lc):
         self.click_on_element(*self.jobs_button)
-        self.wait(DELAY_10_15)
+        self.wait((10, 15))
         self.fill_input_element(*self.search_loc_input, lc)
-        self.wait(DELAY_5_10)
+        self.wait((5, 10))
         self.fill_input_element(*self.search_kw_input, kw)
-        self.wait(DELAY_8_10)
+        self.wait((8, 10))
         try:
             self.click_on_element(*self.search_btn)
         except ElementNotInteractableException:
             self.fill_input_element(*self.search_kw_input, Keys.ENTER)
-        self.wait(DELAY_8_10)
+        self.wait((8, 10))
         location_txt = self.driver.find_element(*self.search_loc_input).get_attribute("data-job-search-box-location-input-trigger")
         if not lc == location_txt:
             self.fill_input_element(*self.search_loc_input, lc)
             self.wait(3)
             self.fill_input_element(*self.search_loc_input, Keys.ENTER)
-            self.wait(DELAY_8_10)
+            self.wait((8, 10))
 
     @repeat_if_fail(WebDriverException, 7)
     def perform_jobs_search(self, search_str, loc):
@@ -102,7 +101,7 @@ class LinkedinParser(Parser):
                             data = {"url": j_url, "location": loc, "keyword": search_str, "source":self.source_name}
                             self.db_manager.create_document(data, LN_BASIC_VACANCY)
                     except KeyError: continue
-                self.wait(DELAY_4_8)
+                self.wait((4, 8))
                 try:
                     self.click_on_element(*self.next_page_numbered())
                     self.current_page += 1
@@ -158,7 +157,7 @@ class LinkedinParser(Parser):
 
     @repeat_if_fail(WebDriverException, 7)
     def perform_job_parsing(self, search_str, loc):
-        urls:list[dict] = self.db_manager.get_documents({"location": loc, "keyword": search_str, "completed": False})
+        urls:list[dict] = self.db_manager.get_many({"location": loc, "keyword": search_str, "completed": False})
         feed = self.driver.current_window_handle
 
         for url in urls:
@@ -167,7 +166,6 @@ class LinkedinParser(Parser):
             self.wait(15)
             try:
                 el = self.driver.find_element(By.ID, "jobs-feed-discovery-module-0")
-                self.db_manager.delete_document({"url": url["url"]})
                 self.driver.close()
                 self.driver.switch_to.window(feed)
                 return
@@ -181,21 +179,21 @@ class LinkedinParser(Parser):
                 pass 
             try: 
                 vacancy = self.db_manager.models[LN_VACANCY].model_validate(url)
-                self.db_manager.update_document({"url": url["url"]}, {"$set": vacancy.model_dump()})
+                self.db_manager.update_one({"url": url["url"]}, {"$set": vacancy.model_dump()})
             except ValidationError:
                 pass
             self.driver.close()
             self.driver.switch_to.window(feed)
             self.click_on_element(*self.jobs_button)
-            self.wait(DELAY_3_6)
+            self.wait((3, 6))
             
     @repeat_if_fail(InvalidSessionIdException, 60)
     def parsing_suite(self, locations, keywords):           
         self.perform_login()
         for location in locations:
             for keyword in keywords:
-                self.wait(DELAY_10_15)
-                self.perform_jobs_search(keyword, location)
+                self.wait((10, 15))
+                # self.perform_jobs_search(keyword, location)
                 self.perform_job_parsing(keyword, location)
         self.driver.quit()
 
@@ -212,7 +210,6 @@ USA = "United States"
 UA = "Ukraine"
 UK = "United Kingdom"
 
-LN_COLLECTION = "Vacancies"
 LN_MODELS = {LN_VACANCY: Vacancy, LN_BASIC_VACANCY: BasicVacancy} 
 LN_LOCATIONS = (UA, USA, EU, UK) 
 LN_KEYWORDS = (PYTHON_KWL, JAVA_KWL, JS_KWL, CPP_KWL)

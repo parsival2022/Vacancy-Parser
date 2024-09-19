@@ -1,12 +1,9 @@
-from bs4 import BeautifulSoup
-from db_manager.mongo_manager import MongoManager
-from pydantic import BaseModel, Field, model_validator, ValidationError
+from pydantic import Field
 from requests.exceptions import ConnectionError
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException, WebDriverException
-from selenium.webdriver.common.keys import Keys
 from .decorators import repeat_if_fail, ignore_if_fail, execute_if_fail
-from .constants import *
+from clusters import *
 from .models import BasicVacancyModel
 from .parser import Parser
 
@@ -36,12 +33,12 @@ class DjinniParser(Parser):
     @repeat_if_fail(NoSuchElementException, 5)
     def perform_login(self):
         self.driver.get(self.login_url)
-        self.wait(DELAY_3_6)
+        self.wait((3, 6))
         self.click_on_element(*self.english_btn)
         super().perform_login()
 
     @repeat_if_fail(AttributeError, 5)
-    def extract_job_details(self, job:BeautifulSoup):
+    def extract_job_details(self, job):
         data = {}
         eng_levels = ['Advanced', 'Fluent', 'Beginner', 'Elementary', 'Intermediate']
         workplaces = ['Remote', 'Full Remote', 'Office', 'Hybrid-Remote']
@@ -66,21 +63,21 @@ class DjinniParser(Parser):
     def perform_jobs_search(self, keywords):
         for keyword in keywords:
             self.click_on_element(*self.jobs_btn)
-            self.wait(DELAY_5_10)
+            self.wait((5, 10))
             self.current_page = 1
             j_url = self.base_url + f"/jobs/?primary_keyword={keyword}"
             self.driver.get(j_url)
             while self.current_page:
                 try:
-                    self.wait(DELAY_5_10)
+                    self.wait((5, 10))
                     j_soup = self.parse_page()
                     jobs = j_soup.find("main").find_all("ul")[0].find_all("li", {"class": "mb-5"})
                     for job in jobs:
                         data = {"keyword": keyword, "source": self.source_name}
                         data.update(self.extract_job_details(job))
                         if not self.db_manager.check_if_exist({"url": data["url"]}):
-                            self.db_manager.create_document(data, DJ_BASE_VACANCY)
-                    self.wait(DELAY_5_10)
+                            self.db_manager.create_one(data, DJ_BASE_VACANCY)
+                    self.wait((5, 10))
                     try:
                         self.wait(3)
                         self.click_on_element(*self.next_page_btn(keyword))
@@ -101,20 +98,20 @@ class DjinniParser(Parser):
     @ignore_if_fail(ElementNotInteractableException)
     def perform_job_parsing(self, keywords):
         for keyword in keywords:
-            urls:list[dict] = self.db_manager.get_documents({"keyword": keyword, "completed": False})
+            urls = self.db_manager.get_many({"keyword": keyword, "completed": False})
             jobs_pg = self.driver.current_window_handle
             for url in urls:
                 self.driver.switch_to.new_window('tab')
                 self.driver.get(url["url"])
-                self.wait(DELAY_10_15)
-                soup:BeautifulSoup = self.parse_page()
+                self.wait((5, 10))
+                soup = self.parse_page()
                 skills = self.extract_skills(soup)
                 if skills:
-                    self.db_manager.update_document({"url": url["url"]}, {"$set": {"skills": skills, "completed": True}})
+                    self.db_manager.update_one({"url": url["url"]}, {"$set": {"skills": skills, "completed": True}})
                 self.driver.close()
                 self.driver.switch_to.window(jobs_pg)
                 # self.click_on_element(*self.all_jobs_btn)
-                self.wait(DELAY_4_8)
+                self.wait((8, 10))
 
     @repeat_if_fail((NoSuchElementException, ConnectionError), 5)
     def parsing_suite(self, keywords):

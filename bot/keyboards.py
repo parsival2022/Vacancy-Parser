@@ -1,5 +1,11 @@
 from dataclasses import dataclass
-from .utils import btn, create_markup
+from .utils import btn
+
+def compile_cb( *args):
+    res = []
+    for arg in args:
+        res.append(Callbacks.__getattribute__(arg))
+    return "&".join(res)
 
 @dataclass
 class Callbacks:
@@ -7,10 +13,18 @@ class Callbacks:
     CHOOSE_CLUSTER_CB = "ch_clstr"
     STATS_FOR_ALL_CLUSTERS_CB = "sts_f_all_clstrs"
 
-    PYTHON_CLUSTER_CHOICE_CB = "python_cl"
-    JAVA_CLUSTER_CHOICE_CB = "java_cl"
-    JS_CLUSTER_CHOICE_CB = "js_cl"
-    CPP_CLUSTER_CHOICE_CB = "cpp_cl"
+    F_ALL_CLUSTERS_CB = "all_cl"
+    F_PYTHON_CLUSTER_CB = "python_cl"
+    F_JAVA_CLUSTER_CB = "java_cl"
+    F_JS_CLUSTER_CB = "js_cl"
+    F_CPP_CLUSTER_CB = "cpp_cl"
+
+    CH_TECHS_CB = "tech"
+    CH_LEVELS_CB = "levels"
+    CH_SKILLS_CB = "skills"
+    CH_EMPL_CB = "emplty"
+    CH_WORKPLACE_CB = "workplty"
+    CH_LOCATIONS_CB = "locs"
 
     TECHS_FOR_ALL_CLUSTERS_CB = "tech_f_all_cl"
     LEVELS_FOR_ALL_CLUSTERS_CB = "levels_f_all_cl"
@@ -20,17 +34,22 @@ class Callbacks:
     LOCATIONS_FOR_ALL_CLUSTERS_CB = "locs_f_all_cl"
 
 
-CLUSTER_CHOICES = (Callbacks.PYTHON_CLUSTER_CHOICE_CB,
-                   Callbacks.JAVA_CLUSTER_CHOICE_CB,
-                   Callbacks.JS_CLUSTER_CHOICE_CB,
-                   Callbacks.CPP_CLUSTER_CHOICE_CB)
 
-STAT_OPTIONS_FOR_ALL_CLUSTERS = (Callbacks.TECHS_FOR_ALL_CLUSTERS_CB,
-                                 Callbacks.LEVELS_FOR_ALL_CLUSTERS_CB,
-                                 Callbacks.SKILLS_FOR_ALL_CLUSTERS_CB,
-                                 Callbacks.EMPL_TYPES_FOR_ALL_CLUSTERS_CB,
-                                 Callbacks.WORKPLACE_TYPES_FOR_ALL_CLUSTERS_CB,
-                                 Callbacks.LOCATIONS_FOR_ALL_CLUSTERS_CB)
+
+CLUSTER_CHOICES = (Callbacks.F_ALL_CLUSTERS_CB,
+                   Callbacks.F_PYTHON_CLUSTER_CB,
+                   Callbacks.F_JAVA_CLUSTER_CB,
+                   Callbacks.F_JS_CLUSTER_CB,
+                   Callbacks.F_CPP_CLUSTER_CB)
+
+OPTIONS = (Callbacks.CH_TECHS_CB, 
+           Callbacks.CH_LEVELS_CB, 
+           Callbacks.CH_SKILLS_CB, 
+           Callbacks.CH_EMPL_CB, 
+           Callbacks.CH_WORKPLACE_CB, 
+           Callbacks.CH_LOCATIONS_CB)
+
+STAT_OPTIONS_FOR_ALL_CLUSTERS = (opt + "&" + Callbacks.F_ALL_CLUSTERS_CB for opt in OPTIONS)
 
 back_to_main_btn = btn("Back to main menu", Callbacks.TO_MAIN_MENU_CB)
 
@@ -50,9 +69,9 @@ stats_options_for_all_clusters = [
 ]
 
 clusters = [
-    btn("Python", Callbacks.PYTHON_CLUSTER_CHOICE_CB),
-    btn("Java", Callbacks.JAVA_CLUSTER_CHOICE_CB),
-    btn("Java Script", Callbacks.JS_CLUSTER_CHOICE_CB),
-    btn("C++", Callbacks.CPP_CLUSTER_CHOICE_CB),
+    btn("Python", Callbacks.F_PYTHON_CLUSTER_CB),
+    btn("Java", Callbacks.F_JAVA_CLUSTER_CB),
+    btn("Java Script", Callbacks.F_JS_CLUSTER_CB),
+    btn("C++", Callbacks.F_CPP_CLUSTER_CB),
     back_to_main_btn
 ]
