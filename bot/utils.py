@@ -14,7 +14,6 @@ def create_markup(buttons, sizes):
 def compile_callbacks(kb, *args):
     new_kb = [bt.update({"callback_data": "&".join([*args, bt["callback_data"]])}) for bt in kb if bt["callback_data"] is not Callbacks.TO_MAIN_MENU_CB]
     new_kb.append(kb[-1])
-    print(new_kb)
     return new_kb
 
 def clear_charts(charts):
@@ -22,3 +21,6 @@ def clear_charts(charts):
         path = f"charts/{chartname}"
         if os.path.exists(path):
             os.remove(path)
+
+def get_message(session, user_id, core_name):
+    lang = session.get_one({"user_id": user_id}).get("lang")

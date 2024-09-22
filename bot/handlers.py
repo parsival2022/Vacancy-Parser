@@ -1,33 +1,54 @@
 from aiogram.types import FSInputFile, InputMediaPhoto
+from clusters import CLUSTERS
 from .callbacks import Callbacks
-from .keyboards import *
+from .keyboards import Keyboards
+from .messages import Messages
+from .session import Session
 from .utils import *
 
-async def ToMainMenuHandler(bot, cb_query, msg):
-    await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
-                                message_id=cb_query.message.message_id, 
-                                reply_markup=create_markup(main_menu_kb, 1))
 
-async def ReturnTermsKb(bot, cb_query, msg, cb):
-    if cb == Callbacks.F_ALL_CLUSTERS_CB:
-        msg = msg + " Remember, that statistic will be shown for all clusters."
-    else: 
-        msg = msg + " Remember, that statistic will be shown only for chosen cluster."
-    kb = compile_callbacks(terms_kb, cb)
+async def ToMainMenuHandler(bot, cb_query, lang):
+    kb = Keyboards.get_keyboard("main_menu_kb", lang)
+    msg = Messages.get_msg("start_cmd", lang)
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                 message_id=cb_query.message.message_id, 
                                 reply_markup=create_markup(kb, 1))
     
-async def ReturnClustersKb(bot, cb_query, msg):
+async def ReturnLangsKb(bot, cb_query, lang):
+    kb = Keyboards.get_keyboard("choose_lang_kb", lang, add=["back_to_main_btn"])
+    msg = Messages.get_msg("choose_lang", lang)
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                 message_id=cb_query.message.message_id, 
-                                reply_markup=create_markup(clusters_kb, 1))
+                                reply_markup=create_markup(kb, 1))
 
-async def ReturnOptionsKb(bot, cb_query, msg, cluster, term):
-    cluster_name = [b["text"] for b in clusters_kb if b["callback_data"] == cluster][0]
-    term_name = [b["text"] for b in terms_kb if b["callback_data"] == term][0]
-    msg = msg + f" Statistics will be shown for {cluster_name} cluster and {term_name} term."
-    kb = compile_callbacks(stats_options_kb, cluster, term)
+async def ReturnTermsKb(bot, cb_query, lang, cb):
+    msg = Messages.get_msg("choose_terms", lang)
+    if cb == Callbacks.F_ALL_CLUSTERS_CB:
+        msg = Messages.add_to_msg(msg, "choose_terms_add_all_cl", lang)
+    else:
+        cl_key = cb.split("_")[0]
+        cl_name = CLUSTERS[cl_key]["name"]
+        msg = Messages.add_to_msg(msg, "choose_terms_add_one_cl", lang, cl_name)
+    kb = Keyboards.get_keyboard("terms_kb", lang)
+    compile_callbacks(kb, cb)
+    await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
+                                message_id=cb_query.message.message_id, 
+                                reply_markup=create_markup(kb, 1))
+    
+async def ReturnClustersKb(bot, cb_query, lang):
+    kb = Keyboards.get_keyboard("clusters_kb", lang)
+    msg = Messages.get_msg("choose_cluster", lang)
+    await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
+                                message_id=cb_query.message.message_id, 
+                                reply_markup=create_markup(kb, 1))
+
+async def ReturnOptionsKb(bot, cb_query, lang, cluster, term):
+    cluster_name = [b["text"] for b in Keyboards.clusters_kb if b["callback_data"] == cluster][0]
+    term_name = [b["text"] for b in Keyboards.get_keyboard("terms_kb", lang) if b["callback_data"] == term][0]
+    msg = Messages.get_msg("choose_option", lang)
+    msg = Messages.add_to_msg(msg, "choose_option_add", lang, cluster_name, term_name) 
+    kb = Keyboards.get_keyboard("stats_options_kb", lang)
+    compile_callbacks(kb, cluster, term)
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                         message_id=cb_query.message.message_id, 
                                         reply_markup=create_markup(kb, 1))

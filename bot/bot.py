@@ -7,8 +7,10 @@ from aiogram.types import Message, CallbackQuery
 from db_manager.mongo_manager import MongoManager
 from statistic_manager.statistic_manager import StatisticManager
 from .utils import create_markup
-from .keyboards import *
+from .keyboards import Keyboards
 from .handlers import *
+from .messages import Messages
+from .session import Session
 
 TOKEN = os.getenv("BOT_TOKEN")
 COLLECTION = os.getenv("MONGO_DB_NAME")
@@ -20,28 +22,49 @@ sm = StatisticManager(db)
 
 @dp.message(CommandStart())
 async def commandStartHandler(message: Message) -> None:
-    msg = "Please choose the option:"
-    await message.answer(msg, reply_markup=create_markup(main_menu_kb, 2))
+    user_session = Session(message)
+    if not user_session.exists():
+        Session.register_user(message)
+        await message.answer(Messages.greet_msg, reply_markup=create_markup(Keyboards.choose_lang_kb, 1))
+    if not user_session.lang:
+        msg = Messages.greet_msg
+        kb = Keyboards.choose_lang_kb
+        await message.answer(msg, reply_markup=create_markup(kb, 2))
+    else:
+        msg = Messages.get_msg("start_cmd", user_session.lang)
+        kb = Keyboards.get_keyboard("main_menu_kb", user_session.lang)
+        await message.answer(msg, reply_markup=create_markup(kb, 2))
     
 @dp.callback_query(lambda c: c.data )
 async def CallbacksHandler(callback_query:CallbackQuery) -> None:
     await bot.answer_callback_query(callback_query.id)
     options = callback_query.data.split("&")
-    print(options)
+    current_session = Session(callback_query)
+    if not current_session.exists():
+        msg = Messages.no_session_msg
+        kb = Keyboards.choose_lang_kb
+        await bot.edit_message_text(msg, chat_id=callback_query.from_user.id, 
+                                    message_id=callback_query.message.message_id, 
+                                    reply_markup=create_markup(kb, 1))
+        return
+    lang = current_session.lang
     match options:
+        case options if len(options) == 1 and options[0] in Callbacks.LANGS:
+            current_session.change_lang(*options)
+            await ToMainMenuHandler(bot, callback_query, *options)
+        case options if len(options) == 1 and options[0] == Callbacks.CHOOSE_LANG_CB:
+            await ReturnLangsKb(bot, callback_query, lang)
         case options if len(options) == 1 and options[0] == Callbacks.TO_MAIN_MENU_CB:
-            msg = "Please choose the option:"
-            await ToMainMenuHandler(bot, callback_query, msg)
+            await ToMainMenuHandler(bot, callback_query, lang)
+        case options if len(options) == 1 and options[0] == Callbacks.CHOOSE_COMPARATIVE_CB:
+            pass
         case options if len(options) == 1 and options[0] == Callbacks.CHOOSE_CLUSTER_CB:
-            msg = "Please choose the cluster you want to get statistics for. Remember, that statistic will be shown only for that cluster."
-            await ReturnClustersKb(bot, callback_query, msg)
+            await ReturnClustersKb(bot, callback_query, lang)
         case options if len(options) == 1 and options[0] in Callbacks.CLUSTERS:
-            msg = "Please choose the period of time for which you want to get statistics for."
-            await ReturnTermsKb(bot, callback_query, msg, *options)
+            await ReturnTermsKb(bot, callback_query, lang, *options)
         case options if len(options) == 2 and options[0] in Callbacks.CLUSTERS and options[1] in Callbacks.TERMS:
-            msg = "Please choose the option you want to get statistics for."
-            await ReturnOptionsKb(bot, callback_query, msg, *options)
-        case options if len(options) == 2 and options[0] in Callbacks.CLUSTERS and options[1] in Callbacks.TERMS and options[2] in Callbacks.OPTIONS:
+            await ReturnOptionsKb(bot, callback_query, lang, *options)
+        case options if len(options) == 3 and options[0] in Callbacks.CLUSTERS and options[1] in Callbacks.TERMS and options[2] in Callbacks.OPTIONS:
             await ReturnGraphHandler(bot, sm, callback_query, *options)
 
 async def main() -> None:

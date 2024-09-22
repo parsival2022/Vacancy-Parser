@@ -8,6 +8,10 @@ class Callbacks:
     CHOOSE_PERIOD_CB = "ch_prd"
     CHOOSE_COMPARATIVE_CB = "ch_cmprt"
     CHOOSE_PLAIN_STAT_CB = "ch_plst"
+    CHOOSE_LANG_CB = "ch_lng"
+
+    LNG_UA_CB = "ua"
+    LNG_ENG_CB = "eng"
 
     F_ALL_CLUSTERS_CB = "all_cl"
     F_PYTHON_CLUSTER_CB = f"{PYTHON}_cl"
@@ -48,6 +52,9 @@ class Callbacks:
              TERM_60D_CB,
              TERM_180D_CB,
              TERM_365D_CB)
+    
+    LANGS = (LNG_UA_CB,
+             LNG_ENG_CB)
     
     MAPPING = {
         CH_TECHS_CB: "technologies",
