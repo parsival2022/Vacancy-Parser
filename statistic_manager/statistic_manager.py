@@ -54,19 +54,19 @@ class StatisticManager:
         else: 
             return data
     
-    def get_stats_for_clusters(self, key):
+    def get_stats_for_clusters(self, key, term, **kwargs):
         data = {}
-        for cluster_key in self.clusters.keys():
-            stat = self.get_stats_for_cluster(cluster_key, key)
+        for cl_key in self.clusters.keys():
+            stat = self.get_stats_for_cluster(cl_key, key, **kwargs)
             data.update(stat)
         return data
     
-    def get_stats_chart(self, field, cl_key=None, chart="bar", **kwargs) -> tuple[list[str], dict]:
+    def get_stats_chart(self, key, cl_key=None, term=10, chart="bar", **kwargs) -> tuple[list[str], dict]:
         if not cl_key:
-            stat = self.get_stats_for_clusters(field)
+            stat = self.get_stats_for_clusters(key, term)
         else:
-            stat = self.get_stats_for_cluster(cl_key, field)
-        if field == "technologies":
+            stat = self.get_stats_for_cluster(cl_key, key, term=term)
+        if key == "technologies":
             stat = self.normalize_technologies(stat, incl_other=True if not cl_key else False)
         filenames = self.generate_pie_chart(stat, **kwargs) if chart == "pie" else self.generate_bar_chart(stat, **kwargs)
         return filenames, stat

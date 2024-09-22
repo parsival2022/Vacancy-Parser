@@ -1,8 +1,6 @@
 import os, time, json, random, requests
 from bs4 import BeautifulSoup
-from datetime import datetime
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field, field_validator
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -12,8 +10,8 @@ from selenium.common.exceptions import NoSuchElementException, ElementClickInter
 from selenium.webdriver.chrome.options import Options
 from typing import Callable, Iterable
 from webdriver_manager.chrome import ChromeDriverManager
-from .decorators import repeat_if_fail
 from clusters import *
+from .decorators import repeat_if_fail
 from .errors import ModeUnacceptableMethod, NoRequiredParameterProvided
 
 load_dotenv()
@@ -27,7 +25,6 @@ class Parser:
     headers = {}
     cache = []
     current_page = None
-
     base_url = "https://www.example.com"
     login_url = None
     
@@ -36,8 +33,6 @@ class Parser:
     password_input = (By.ID, "password")
     login_btn = (By.XPATH, '//button[text()="Log In"]')
     login_fails = ((By.XPATH, '//div[contains(@class, "form-group has-error")]'))
-
-
 
     def __init__(self, init_url=None, db_manager=None, use_driver=True, use_request=False, proxies=[]) -> None:
         self.init_url = init_url if init_url else self.login_url
@@ -63,7 +58,7 @@ class Parser:
         options.add_argument("--dns-prefetch-disable")
         options.add_argument("--disable-gpu")
         options.add_argument("--disable-gpu-compositing")
-        # options.add_argument("--headless")
+        options.add_argument("--headless")
         options.add_argument("--disable-software-rasterizer")
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--disable-dev-shm-usage")

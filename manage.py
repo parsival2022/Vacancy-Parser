@@ -33,7 +33,7 @@ def launch_djinni_parsing():
 def get_chart():
     db_manager = MongoManager(COLLECTION)
     sm = SM(db_manager)
-    sm.get_stats_barchart("technologies", PYTHON)
+    sm.get_stats_chart("technologies", PYTHON, y_label="Technologies")
 
 @cli.command()
 def start_bot():

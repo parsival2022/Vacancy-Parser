@@ -10,8 +10,8 @@ from selenium.common.exceptions import (NoSuchElementException,
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from clusters import *
+from models import BasicVacancyModel
 from .decorators import repeat_if_fail, execute_if_fail
-from .models import BasicVacancyModel
 from .parser import Parser
 
 load_dotenv()

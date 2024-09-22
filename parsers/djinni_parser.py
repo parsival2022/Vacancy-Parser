@@ -2,9 +2,9 @@ from pydantic import Field
 from requests.exceptions import ConnectionError
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, ElementNotInteractableException, WebDriverException
-from .decorators import repeat_if_fail, ignore_if_fail, execute_if_fail
 from clusters import *
-from .models import BasicVacancyModel
+from models import BasicVacancyModel
+from .decorators import repeat_if_fail, ignore_if_fail, execute_if_fail
 from .parser import Parser
 
 class DjinniBasicVacancy(BasicVacancyModel):

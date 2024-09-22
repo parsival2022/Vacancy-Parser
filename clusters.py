@@ -1,10 +1,12 @@
+
 PYTHON = "python"
 JS = "js"
 JAVA = "java"
 CPP = "c++"
 
 CLUSTERS = {
-    PYTHON: {"name": "Python",
+    PYTHON: {
+     "name": "Python",
      "technologies": (
                         "Django",
                         "Flask",
@@ -40,11 +42,12 @@ CLUSTERS = {
                     ),
     "keywords": {"ln_kw": "python",
                  "dj_kw": "Python"}},
-    JAVA : {"name": "Java",
+    JAVA : {
+     "name": "Java",
      "technologies": (
                         "Spring",
                         "Hibernate",
-                        "Apache Maven",
+                        "Maven",
                         "Gradle",
                         "JUnit",
                         "Apache Tomcat",
@@ -70,7 +73,8 @@ CLUSTERS = {
                     ),
     "keywords": {"ln_kw": "java",
                  "dj_kw": "Java"}},
-    JS: {"name": "Java Script",
+    JS: {
+     "name": "Java Script",
      "technologies": (  
                         "React",
                         "Vue",
@@ -103,7 +107,8 @@ CLUSTERS = {
                     ),
     "keywords": {"ln_kw": "java script",
                  "dj_kw": "JavaScript"}},
-    CPP: {"name": "C++",
+    CPP: {
+     "name": "C++",
      "technologies": (
                         "Qt",
                         "Boost",
@@ -149,6 +154,8 @@ OTHER_TECHS = ["Git",
                "SOAP",
                "MySQL",
                "AI",
-               "Machine Learning"
+               "Machine Learning",
+               "Azure"
                ]
+
 NOT_DEFINED = "This requirement wasn't defined in vacancy."

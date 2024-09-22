@@ -22,7 +22,6 @@ class BasicVacancyModel(BaseModel):
     employment_type:str = Field(default=NOT_DEFINED)
     salary:str = Field(default=NOT_DEFINED)
 
-    @model_validator(mode='after')
     def check_level(self):
         title = self.title.casefold()
         if self.level == NOT_DEFINED:
@@ -36,27 +35,42 @@ class BasicVacancyModel(BaseModel):
                 self.level = "Lead"
         return self
     
-    @model_validator(mode="after")
-    def define_cluster(self):
-        for v in CLUSTERS.values():
-            if self.keyword in v["keywords"].values():
-                self.clusters.append(v["name"])
-        return self
-    
-    @model_validator(mode="after")
     def extract_technologies(self):
+        _ = lambda s: s.lower().replace(" ", "")
         normalized_descr = self.description.lower()
         techs = [tech for sublist in (v["technologies"] for v in CLUSTERS.values()) for tech in sublist] + OTHER_TECHS
         self.technologies = [tech for tech in techs if re.search(rf"\b{re.escape(tech.lower())}\b", normalized_descr)]
-        self.technologies + [skill for skill in self.skills if (skill.lower() in tech.lower() for tech in techs) and not skill in self.technologies]
         for tech in self.technologies:
             for v in CLUSTERS.values():
                 if tech in v["technologies"] and not v["name"] in self.clusters:
                     self.clusters.append(v["name"])
         for skill in self.skills:
-            if skill in self.technologies:
-                self.skills.remove(skill)
+            for v in CLUSTERS.values():
+                if _(skill) == _(v['name']) or re.search(rf"\b{_(v['name'])}\b", _(skill)):
+                    if not v["name"] in self.clusters: 
+                        self.clusters.append(v["name"])
+                    self.skills.remove(skill)
+                    continue
+                techs_fr_skills = [tech for tech in v["technologies"] if re.search(rf"\b{re.escape(_(tech))}\b", _(skill))]
+                if techs_fr_skills: 
+                    self.technologies = self.technologies + techs_fr_skills
+                    self.clusters.append(v["name"]) if not v["name"] in self.clusters else None
+                    self.skills.remove(skill)
         return self
+    
+    def define_cluster(self):
+        for v in CLUSTERS.values():
+            if self.keyword in v["keywords"].values() and not v["name"] in self.clusters:
+                self.clusters.append(v["name"])
+            if re.search(rf"\b{v['name'].lower()}\b", self.title) and not v["name"] in self.clusters:
+                self.clusters.append(v["name"])
+        return self
+    
+    @model_validator(mode="after")
+    def normalization_suite(self):
+        self.define_cluster()
+        self.check_level()
+        self.extract_technologies()
     
     @classmethod
     def normalize_str(self, str):
