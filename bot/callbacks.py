@@ -11,9 +11,17 @@ class Callbacks:
     CHOOSE_LANG_CB = "ch_lng"
     CHOOSE_OTHER_OPTION = "ch_othopt"
     CHOOSE_OTHER_TERM = "ch_othtrm"
+    CHOOSE_OPTION_CB = "ch_optns"
+    COMPARATIVE_CB = "cmpr"
+    GET_STATS_CB = "gt_ststc"
 
     LNG_UA_CB = "ua"
     LNG_ENG_CB = "eng"
+
+    LOC_UA_CB = "ua_loc"
+    LOC_USA_CB = "usa_loc"
+    LOC_EU_CB = "eu_loc"
+    LOC_UK_CB = "uk_loc"
 
     F_ALL_CLUSTERS_CB = "all_cl"
     F_PYTHON_CLUSTER_CB = f"{PYTHON}_cl"
@@ -34,6 +42,7 @@ class Callbacks:
     CH_EMPL_CB = "emplty"
     CH_WORKPLACE_CB = "workplty"
     CH_LOCATIONS_CB = "locs"
+    CH_SALARY_KB = "slry"
 
     CLUSTERS = (F_ALL_CLUSTERS_CB,
                 F_PYTHON_CLUSTER_CB,
@@ -58,11 +67,21 @@ class Callbacks:
     LANGS = (LNG_UA_CB,
              LNG_ENG_CB)
     
+    LOCATIONS = (LOC_UA_CB,
+                 LOC_EU_CB,
+                 LOC_UK_CB,
+                 LOC_USA_CB)
+    
     MAPPING = {
         CH_TECHS_CB: "technologies",
         CH_LEVELS_CB: "level",
         CH_SKILLS_CB: "skills",
         CH_EMPL_CB: "employment_type", 
         CH_WORKPLACE_CB: "workplace_type",
-        CH_LOCATIONS_CB: "location"
+        CH_LOCATIONS_CB: "location",
+        CH_SALARY_KB: "salary",
+        LOC_UA_CB: UA,
+        LOC_UK_CB: UK,
+        LOC_USA_CB: USA,
+        LOC_EU_CB: EU
     }

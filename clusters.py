@@ -4,6 +4,11 @@ JS = "js"
 JAVA = "java"
 CPP = "c++"
 
+EU = "European Union"
+USA = "United States"
+UA = "Ukraine"
+UK = "United Kingdom"
+
 CLUSTERS = {
     PYTHON: {
      "name": "Python",

@@ -27,6 +27,22 @@ class Session:
     def change_lang(self, lang):
         self.session_manager.update_one({"user_id": self.user_id}, {"$set": {"lang": lang}})
 
+    def start_query(self):
+        self.session_manager.update_one({"user_id": self.user_id}, {"$set": {"query": {}}})
+
+    def get_query(self):
+        query = self._session.get("query")
+        return query
+    
+    def add_to_query(self, k, v):
+        self.session_manager.update_one({"user_id": self.user_id}, {"$set": {f"query.{k}": v}})
+    
+    def push_to_query(self, k, v):
+        self.session_manager.update_one({"user_id": self.user_id}, {"$push": {f"query.{k}": v}})
+
+    def clear(self):
+        self.session_manager.update_one({"user_id": self.user_id}, {"$unset": {"query": ""}})
+
     @classmethod
     def register_user(cls, extractable, data={}):
         data["user_id"] = extractable.from_user.id

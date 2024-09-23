@@ -2,7 +2,7 @@ from typing import Callable
 class Messages:
     eng_start_cmd = "Let's begin! First, choose a statistics option:"
     ua_start_cmd = "Почнімо! Спочатку оберіть опцію статистики:"
-    eng_choose_lang = "Choose a language for communication!"
+    eng_choose_lang = "Choose a language for communication:"
     ua_choose_lang = "Оберіть мову спілкування:"
     eng_choose_cluster = "Please choose the cluster you want to get statistics for. Remember, that statistic will be shown only for that cluster."
     ua_choose_cluster = "Будь ласка оберіть кластер, для якого ви хотіли б отримати статистику. Майте на увазі, що статистика буде показана тільки для цього кластера."
@@ -18,17 +18,37 @@ class Messages:
     ua_choose_option_add = lambda cluster_name="кожного", term_name="10 днів": f"Статистика буде показана для {cluster_name} кластера за період у {term_name}."
     eng_after_graph = "Choose following action"
     ua_after_graph = "Оберіть подальші дії"
+    eng_choose_terms_compar = "Choose period of time for which comparative statistic will be calculated."
+    ua_choose_terms_compar = "Оберіть період, за який буде обрахована порівняльна статистика."
+    eng_choose_location_compar = "Choose location for which you want to get statistic for. If you choose multiple locations, only one cluster is available to get statistic for."
+    ua_choose_location_compar = "Оберіть регіон, по якому ви хочете отримати статистику. Якщо ви оберете кілька регіонів, то подальша статистика буде доступна тільки для одного кластеру."
+    eng_already_chosen_loc = "You have chosen this location already. Choose another location or move on to choose clusters to compare."
+    ua_already_chosen_loc = "Ви вже обрали цей регіон. Оберіть інший регіон або перейдіть до вибору кластерів до порівняння."
+    eng_location_saved = lambda location: f"You succefully have chosen {location}. You can choose another location to compare or go to cluster choices."
+    ua_location_saved = lambda location: f"Ви успішно обрали регіон {location}. Можете обрати ще один регіон або перейти до вибору кластерів"
+    eng_choose_compar_cluster = "Please choose cluster or clusters to calculate statistics for."
+    ua_choose_compar_cluster = "Будь ласка оберіть кластер або кластери, для яких потрібно обрахувати статистику."
+    eng_compar_only_one_cluster = "You have chosen more then one locations, therefore comparative statistic could be calculated for one cluster. Please choose option in cluster to get statistic for."
+    ua_compar_only_one_cluster = "Ви обрали більше одного регіону, тож порівняльна статистика може бути обрахована тільки для одного кластеру. Будь ласка оберіть поле, для якого буде обрахована статистика."
+    eng_compar_choose_another_cluster = "You have chosen only one location. You have to choose another cluster to calculate comparative statistics."
+    ua_compar_choose_another_cluster = "Ви обрали лише один регіон. Оберіть додаткові кластери, щоб обрахувати для них порівняльну статистику."
+    eng_compar_already_chosen_cluster = "You have chosen this cluster already. Choose another cluster or move on to choose option of the cluster."
+    ua_compar_already_chosen_cluster = "Ви вже обрали цей кластер. Оберіть інший кластер або перейдіть до вибору поля кластеру."
+    eng_compar_cluster_added = lambda cl_name: f"Cluster {cl_name} has been added. Choose another cluster or move on to choose option of the cluster."
+    ua_compar_cluster_added = lambda cl_name: f"Кластер {cl_name} було додано. Оберіть інший кластер або перейдіть до вибору поля кластеру."
+    eng_compar_already_chosen_opt = "You have chosen this option already. Choose another option or get statistic."
+    ua_compar_already_chosen_opt = "Ви вже додали це поле. Оберіть інше поле або отримайте статистику."
+    eng_option_saved = lambda option: f"You succefully have chosen {option}. You can choose another option to get statistic for or move to getting statistic."
+    ua_option_saved = lambda option: f"Ви успішно обрали поле {option}. Можете обрати ще одну опцію або перейти до отримання статистики."
     greet_msg = "Привіт! Почнемо роботу? Для початку оберіть мову спілкування:\nHello! Let`s begin, shall we? First, choose a language for communication: "
     no_session_msg = "It looks like you did not choose a language yet. Please choose your language!\nСхоже ви ще не обрали мову спілкування. Будь ласка, зробіть це зараз!"
 
     @classmethod
-    def get_msg(cls, core_name, lang):
+    def get_msg(cls, core_name, lang, *args, **kwargs):
         attribute_name = f"{lang}_{core_name}"
-        return getattr(cls, attribute_name)
-    
-    @classmethod
-    def add_to_msg(cls, msg, core_name, lang, *args, **kwargs):
-        msg_to_add = cls.get_msg(core_name, lang)
-        if args and isinstance(msg_to_add, Callable) or kwargs and isinstance(msg_to_add, Callable):
-            msg_to_add = msg_to_add(*args, **kwargs)
-        return msg + " " + msg_to_add
+        msg = getattr(cls, attribute_name)
+        if args and isinstance(msg, Callable) or kwargs and isinstance(msg, Callable):
+            _msg = msg(*args, **kwargs)
+            return _msg
+        else:
+            return msg
