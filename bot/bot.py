@@ -65,7 +65,7 @@ async def CallbacksHandler(callback_query:CallbackQuery) -> None:
         case options if len(options) == 2 and options[0] in Callbacks.CLUSTERS and options[1] in Callbacks.TERMS:
             await ReturnOptionsKb(bot, callback_query, lang, *options)
         case options if len(options) == 3 and options[0] in Callbacks.CLUSTERS and options[1] in Callbacks.TERMS and options[2] in Callbacks.OPTIONS:
-            await ReturnGraphHandler(bot, sm, callback_query, *options)
+            await ReturnGraphHandler(bot, sm, callback_query, lang, *options)
 
 async def main() -> None:
     await dp.start_polling(bot)

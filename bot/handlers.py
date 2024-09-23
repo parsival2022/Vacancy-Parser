@@ -43,17 +43,20 @@ async def ReturnClustersKb(bot, cb_query, lang):
                                 reply_markup=create_markup(kb, 1))
 
 async def ReturnOptionsKb(bot, cb_query, lang, cluster, term):
-    cluster_name = [b["text"] for b in Keyboards.clusters_kb if b["callback_data"] == cluster][0]
-    term_name = [b["text"] for b in Keyboards.get_keyboard("terms_kb", lang) if b["callback_data"] == term][0]
     msg = Messages.get_msg("choose_option", lang)
-    msg = Messages.add_to_msg(msg, "choose_option_add", lang, cluster_name, term_name) 
+    term_name = [b["text"] for b in Keyboards.get_keyboard("terms_kb", lang) if b["callback_data"] == term][0]
+    try:
+        cluster_name = [b["text"] for b in Keyboards.clusters_kb if b["callback_data"] == cluster][0]
+        msg = Messages.add_to_msg(msg, "choose_option_add", lang, cluster_name, term_name)
+    except IndexError:
+        msg = Messages.add_to_msg(msg, "choose_option_add", lang, term_name=term_name)
     kb = Keyboards.get_keyboard("stats_options_kb", lang)
     compile_callbacks(kb, cluster, term)
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                         message_id=cb_query.message.message_id, 
                                         reply_markup=create_markup(kb, 1))
     
-async def ReturnGraphHandler(bot, st_manager, cb_query, cluster, term, option, chart="bar"):
+async def ReturnGraphHandler(bot, st_manager, cb_query, lang, cluster, term, option, chart="bar"):
     cl_key = None if cluster == Callbacks.F_ALL_CLUSTERS_CB else cluster.split("_")[0]
     term = int(term)
     key = Callbacks.MAPPING.get(option)
@@ -61,4 +64,8 @@ async def ReturnGraphHandler(bot, st_manager, cb_query, cluster, term, option, c
     charts = [FSInputFile(f"charts/{filename}") for filename in filenames]
     await bot.send_media_group(chat_id=cb_query.from_user.id,
                                 media=[InputMediaPhoto(media=chart) for chart in charts])
+    kb = Keyboards.get_keyboard("after_graph_menu", lang)
+    msg = Messages.get_msg("after_graph", lang)
+    await bot.send_message(text=msg, chat_id=cb_query.from_user.id,
+                           reply_markup=create_markup(kb, 1))
     clear_charts(filenames)

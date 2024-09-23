@@ -9,6 +9,8 @@ class Callbacks:
     CHOOSE_COMPARATIVE_CB = "ch_cmprt"
     CHOOSE_PLAIN_STAT_CB = "ch_plst"
     CHOOSE_LANG_CB = "ch_lng"
+    CHOOSE_OTHER_OPTION = "ch_othopt"
+    CHOOSE_OTHER_TERM = "ch_othtrm"
 
     LNG_UA_CB = "ua"
     LNG_ENG_CB = "eng"

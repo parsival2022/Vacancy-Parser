@@ -14,8 +14,10 @@ class Messages:
     ua_choose_terms_add_one_cl = lambda cl_name: f"Статистика буде показана тільки для кластера {cl_name}."
     eng_choose_option = "Please choose the option you want to get statistics for."
     ua_choose_option = "Будь ласка оберіть опцію, для якої ви хочете отримати статистику."
-    eng_choose_option_add = lambda cluster_name, term_name: f"Statistics will be shown for {cluster_name} cluster and {term_name} term."
-    ua_choose_option_add = lambda cluster_name, term_name: f"Статистика буде показана для кластеру {cluster_name} за {term_name}."
+    eng_choose_option_add = lambda cluster_name="every", term_name="10 days": f"Statistics will be shown for {cluster_name} cluster and {term_name} period of time."
+    ua_choose_option_add = lambda cluster_name="кожного", term_name="10 днів": f"Статистика буде показана для {cluster_name} кластера за період у {term_name}."
+    eng_after_graph = "Choose following action"
+    ua_after_graph = "Оберіть подальші дії"
     greet_msg = "Привіт! Почнемо роботу? Для початку оберіть мову спілкування:\nHello! Let`s begin, shall we? First, choose a language for communication: "
     no_session_msg = "It looks like you did not choose a language yet. Please choose your language!\nСхоже ви ще не обрали мову спілкування. Будь ласка, зробіть це зараз!"
 
@@ -25,8 +27,8 @@ class Messages:
         return getattr(cls, attribute_name)
     
     @classmethod
-    def add_to_msg(cls, msg, core_name, lang, *args):
+    def add_to_msg(cls, msg, core_name, lang, *args, **kwargs):
         msg_to_add = cls.get_msg(core_name, lang)
-        if args and isinstance(msg_to_add, Callable):
-            msg_to_add = msg_to_add(*args)
+        if args and isinstance(msg_to_add, Callable) or kwargs and isinstance(msg_to_add, Callable):
+            msg_to_add = msg_to_add(*args, **kwargs)
         return msg + " " + msg_to_add

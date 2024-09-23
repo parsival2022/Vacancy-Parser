@@ -49,6 +49,13 @@ class Keyboards:
         back_to_main_btn
     ]
 
+    after_graph_menu = [
+        btn("Choose other option", Callbacks.CHOOSE_OTHER_OPTION),
+        btn("Choose other period of time", Callbacks.CHOOSE_OTHER_TERM),
+        back_to_main_btn
+
+    ]
+
     LANGS = {
         UA: {
             "10 days": "10 днів",
@@ -61,7 +68,9 @@ class Keyboards:
             "Get statistic for all clusters": "Отримати статистику для всіх кластерів",
             "Get comparative statistic": "Отримати порівняльну статистику",
             "Back to main menu": "До головного меню",
-            "Change language": "Змінити мову"
+            "Change language": "Змінити мову",
+            "Choose other option": "Обрати іншу опцію",
+            "Choose other period of time": "Обрати інший період часу"
         }
     }
 
@@ -74,7 +83,6 @@ class Keyboards:
                 new_text = mapping.get(btn["text"])
                 if new_text:
                     btn["text"] = new_text
-        print(copied_kb)
         return copied_kb
 
     @classmethod
