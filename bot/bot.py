@@ -31,9 +31,10 @@ async def commandStartHandler(message: Message) -> None:
         kb = Keyboards.choose_lang_kb
         await message.answer(msg, reply_markup=create_markup(kb, 2))
     else:
+        user_session.clear()
         msg = Messages.get_msg("start_cmd", user_session.lang)
         kb = Keyboards.get_keyboard("main_menu_kb", user_session.lang)
-        await message.answer(msg, reply_markup=create_markup(kb, 2))
+        await message.answer(msg, reply_markup=create_markup(kb, 1))
     
 @dp.callback_query(lambda c: c.data )
 async def CallbacksHandler(callback_query:CallbackQuery) -> None:
@@ -51,36 +52,51 @@ async def CallbacksHandler(callback_query:CallbackQuery) -> None:
     match options:
         case options if len(options) == 1 and options[0] in Callbacks.LANGS:
             current_session.change_lang(*options)
-            await ToMainMenuHandler(bot, callback_query, *options)
+            await ToMainMenuHandler(bot, callback_query, current_session, *options)
+        case options if len(options) == 1 and options[0] == Callbacks.TO_MAIN_MENU_CB:
+            await ToMainMenuHandler(bot, callback_query, current_session, lang)
         case options if len(options) == 1 and options[0] == Callbacks.CHOOSE_LANG_CB:
             await ReturnLangsKb(bot, callback_query, lang)
-        case options if len(options) == 1 and options[0] == Callbacks.TO_MAIN_MENU_CB:
-            current_session.clear()
-            await ToMainMenuHandler(bot, callback_query, lang)
         case options if len(options) == 1 and options[0] == Callbacks.CHOOSE_COMPARATIVE_CB:
             await ReturnComparTermsMenu(bot, callback_query, lang, current_session)
         case options if len(options) == 1 and options[0] == Callbacks.CHOOSE_CLUSTER_CB:
             await ReturnClustersKb(bot, callback_query, lang)
         case options if len(options) == 1 and options[0] in Callbacks.CLUSTERS:
-            await ReturnTermsKb(bot, callback_query, lang, *options)
-        case options if len(options) == 2 and options[0] in Callbacks.CLUSTERS and options[1] in Callbacks.TERMS:
-            await ReturnOptionsKb(bot, callback_query, lang, *options)
-        case options if len(options) == 2 and options[0] == Callbacks.COMPARATIVE_CB and (options[1] in Callbacks.TERMS or options[1] == Callbacks.CH_LOCATIONS_CB):
+            await ReturnTermsKb(bot, callback_query, lang, current_session, *options)
+        case options if len(options) == 2 and (options[0] in Callbacks.CLUSTERS 
+                                               and options[1] in Callbacks.TERMS):
+            await ReturnLocationsKb(bot, callback_query, lang, current_session, *options)
+        case options if len(options) == 2 and (options[0] == Callbacks.COMPARATIVE_CB 
+                                               and (options[1] in Callbacks.TERMS 
+                                                    or options[1] == Callbacks.CHOOSE_LOCATION_CB)):
             await ReturnComparLocationsMenu(bot, callback_query, lang, current_session, options[1])
-        case options if len(options) == 2 and options[0] == Callbacks.COMPARATIVE_CB and options[1] in Callbacks.LOCATIONS:
+        case options if len(options) == 2 and (options[0] == Callbacks.COMPARATIVE_CB 
+                                               and options[1] in Callbacks.LOCATIONS):
             await HandleComparLocationsMenu(bot, callback_query, lang, current_session, options[1])
-        case options if len(options) == 2 and options[0] == Callbacks.COMPARATIVE_CB and options[1] == Callbacks.CHOOSE_CLUSTER_CB:
-            await ReturnComparClustersKb(bot, callback_query, lang)
-        case options if len(options) == 2 and options[0] == Callbacks.COMPARATIVE_CB and options[1] in Callbacks.CLUSTERS:
+        case options if len(options) == 2 and (options[0] == Callbacks.COMPARATIVE_CB 
+                                               and options[1] == Callbacks.CHOOSE_CLUSTER_CB):
+            await ReturnComparClustersMenu(bot, callback_query, lang)
+        case options if len(options) == 2 and (options[0] == Callbacks.COMPARATIVE_CB 
+                                               and options[1] in Callbacks.CLUSTERS):
             await HandleComparClustersMenu(bot, callback_query, lang, current_session, options[1])
-        case options if len(options) == 2 and options[0] == Callbacks.COMPARATIVE_CB and options[1] == Callbacks.CHOOSE_OPTION_CB:
-            await ReturnComparOptionsKb(bot, callback_query, lang, current_session)
-        case options if len(options) == 2 and options[0] == Callbacks.COMPARATIVE_CB and options[1] in Callbacks.OPTIONS:
+        case options if len(options) == 2 and (options[0] == Callbacks.COMPARATIVE_CB 
+                                               and options[1] == Callbacks.CHOOSE_OPTION_CB):
+            await ReturnComparOptionsMenu(bot, callback_query, lang, current_session)
+        case options if len(options) == 2 and (options[0] == Callbacks.COMPARATIVE_CB 
+                                               and options[1] in Callbacks.OPTIONS):
             await HandleComparOptionsMenu(bot, callback_query, lang, current_session, options[1])
-        case options if len(options) == 2 and options[0] == Callbacks.COMPARATIVE_CB and options[1] == Callbacks.GET_STATS_CB:
-            await ReturnComparGraph(bot, callback_query, lang, current_session)
-        case options if len(options) == 3 and options[0] in Callbacks.CLUSTERS and options[1] in Callbacks.TERMS and options[2] in Callbacks.OPTIONS:
-            await ReturnGraphHandler(bot, sm, callback_query, lang, *options)
+        case options if len(options) == 2 and (options[0] == Callbacks.COMPARATIVE_CB 
+                                               and options[1] == Callbacks.GET_STATS_CB):
+            await ReturnComparGraphHandler(bot, callback_query, lang, current_session, sm)
+        case options if len(options) == 3 and (options[0] in Callbacks.CLUSTERS 
+                                               and options[1] in Callbacks.TERMS 
+                                               and options[2] in Callbacks.LOCATIONS):
+            await ReturnOptionsKb(bot, callback_query, lang, current_session, *options)
+        case options if len(options) == 4 and (options[0] in Callbacks.CLUSTERS 
+                                               and options[1] in Callbacks.TERMS 
+                                               and options[2] in Callbacks.LOCATIONS 
+                                               and options[3] in Callbacks.OPTIONS):
+            await ReturnGraphHandler(bot, sm, callback_query, lang, current_session, *options)
 
 async def main() -> None:
     await dp.start_polling(bot)

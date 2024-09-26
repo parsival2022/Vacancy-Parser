@@ -88,7 +88,7 @@ class DjinniParser(Parser):
                 except (NoSuchElementException, ElementNotInteractableException):
                     self.current_page = None
 
-    @execute_if_fail((IndexError, TypeError), lambda: None)
+    @execute_if_fail((IndexError, TypeError, AttributeError), lambda: None)
     def extract_skills(self, soup):
         skills:str = soup.find(*self.job_extra_info).find_all("li", {"class": "mb-1"})[1].get_text(strip=True)
         return [skill.strip() for skill in skills.split(",")]

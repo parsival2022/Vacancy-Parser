@@ -6,7 +6,8 @@ from selenium.common.exceptions import (NoSuchElementException,
                                         ElementNotInteractableException, 
                                         ElementClickInterceptedException,
                                         WebDriverException,
-                                        InvalidSessionIdException)
+                                        InvalidSessionIdException,
+                                        SessionNotCreatedException)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from clusters import *
@@ -99,7 +100,7 @@ class LinkedinParser(Parser):
                         j_url = f"{self.base_url}/jobs/view/{j_id}/"
                         if not self.db_manager.check_if_exist({"url": j_url}):
                             data = {"url": j_url, "location": loc, "keyword": search_str, "source":self.source_name}
-                            self.db_manager.create_document(data, LN_BASIC_VACANCY)
+                            self.db_manager.create_one(data, LN_BASIC_VACANCY)
                     except KeyError: continue
                 self.wait((4, 8))
                 try:
@@ -187,7 +188,7 @@ class LinkedinParser(Parser):
             self.click_on_element(*self.jobs_button)
             self.wait((3, 6))
             
-    @repeat_if_fail(InvalidSessionIdException, 60)
+    @repeat_if_fail((InvalidSessionIdException, SessionNotCreatedException), 60)
     def parsing_suite(self, locations, keywords):           
         self.perform_login()
         for location in locations:
@@ -211,6 +212,6 @@ UA = "Ukraine"
 UK = "United Kingdom"
 
 LN_MODELS = {LN_VACANCY: Vacancy, LN_BASIC_VACANCY: BasicVacancy} 
-LN_LOCATIONS = (UA, USA, EU, UK) 
+LN_LOCATIONS = (USA, EU, UK) 
 LN_KEYWORDS = (PYTHON_KWL, JAVA_KWL, JS_KWL, CPP_KWL)
 

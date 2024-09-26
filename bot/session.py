@@ -1,3 +1,4 @@
+import re
 from db_manager.mongo_manager import MongoManager
 from pydantic import BaseModel, Field
 
@@ -18,6 +19,9 @@ class Session:
 
     def exists(self):
         return self._session is not None
+    
+    def refresh(self):
+        self._session = self.session_manager.get_one({"user_id": self.user_id})
 
     def get_session(self, extractable) -> dict | None:
         user_id = extractable.from_user.id
@@ -42,6 +46,22 @@ class Session:
 
     def clear(self):
         self.session_manager.update_one({"user_id": self.user_id}, {"$unset": {"query": ""}})
+    
+    def combine_title(self, cb_query, cb):
+        kb = cb_query.message.reply_markup.inline_keyboard
+        try:
+            text = [b[0].text for b in kb if b and re.search(rf"\b{cb}\b", b[0].callback_data)][0]
+        except KeyError:
+            text = None
+        if not self.get_query():
+            self.add_to_query("title_data", [text])
+        else: self.push_to_query("title_data", text)
+    
+    def get_title(self):
+        query = self.get_query()
+        title_data = query.get("title_data")
+        title_data.insert(0, self.lang)
+        return title_data
 
     @classmethod
     def register_user(cls, extractable, data={}):

@@ -44,18 +44,20 @@ class BasicVacancyModel(BaseModel):
             for v in CLUSTERS.values():
                 if tech in v["technologies"] and not v["name"] in self.clusters:
                     self.clusters.append(v["name"])
+        skills_to_remove = []
         for skill in self.skills:
             for v in CLUSTERS.values():
                 if _(skill) == _(v['name']) or re.search(rf"\b{_(v['name'])}\b", _(skill)):
                     if not v["name"] in self.clusters: 
                         self.clusters.append(v["name"])
-                    self.skills.remove(skill)
+                    skills_to_remove.append(skill)
                     continue
                 techs_fr_skills = [tech for tech in v["technologies"] if re.search(rf"\b{re.escape(_(tech))}\b", _(skill))]
                 if techs_fr_skills: 
-                    self.technologies = self.technologies + techs_fr_skills
+                    self.technologies = list(set(self.technologies + techs_fr_skills)) 
                     self.clusters.append(v["name"]) if not v["name"] in self.clusters else None
-                    self.skills.remove(skill)
+                    skills_to_remove.append(skill)
+        self.skills = [skill for skill in self.skills if skill not in skills_to_remove]
         return self
     
     def define_cluster(self):
@@ -71,6 +73,7 @@ class BasicVacancyModel(BaseModel):
         self.define_cluster()
         self.check_level()
         self.extract_technologies()
+        return self
     
     @classmethod
     def normalize_str(self, str):

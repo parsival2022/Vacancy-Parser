@@ -12,6 +12,7 @@ class Callbacks:
     CHOOSE_OTHER_OPTION = "ch_othopt"
     CHOOSE_OTHER_TERM = "ch_othtrm"
     CHOOSE_OPTION_CB = "ch_optns"
+    CHOOSE_LOCATION_CB = "ch_lctn"
     COMPARATIVE_CB = "cmpr"
     GET_STATS_CB = "gt_ststc"
 
@@ -41,8 +42,8 @@ class Callbacks:
     CH_SKILLS_CB = "skls"
     CH_EMPL_CB = "emplty"
     CH_WORKPLACE_CB = "workplty"
-    CH_LOCATIONS_CB = "locs"
-    CH_SALARY_KB = "slry"
+    CH_LOCATION_CB = "locs"
+    CH_SALARY_CB = "slry"
 
     CLUSTERS = (F_ALL_CLUSTERS_CB,
                 F_PYTHON_CLUSTER_CB,
@@ -55,7 +56,8 @@ class Callbacks:
                CH_SKILLS_CB, 
                CH_EMPL_CB, 
                CH_WORKPLACE_CB, 
-               CH_LOCATIONS_CB)
+               CH_LOCATION_CB,
+               CH_SALARY_CB)
 
     TERMS = (TERM_10D_CB,
              TERM_20D_CB,
@@ -78,8 +80,8 @@ class Callbacks:
         CH_SKILLS_CB: "skills",
         CH_EMPL_CB: "employment_type", 
         CH_WORKPLACE_CB: "workplace_type",
-        CH_LOCATIONS_CB: "location",
-        CH_SALARY_KB: "salary",
+        CH_LOCATION_CB: "location",
+        CH_SALARY_CB: "salary",
         LOC_UA_CB: UA,
         LOC_UK_CB: UK,
         LOC_USA_CB: USA,

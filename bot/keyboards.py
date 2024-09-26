@@ -1,10 +1,12 @@
 import copy
 from clusters import *
 from .callbacks import Callbacks
-from .utils import btn   
+
 
 L_ENG = "eng"
 L_UA = "ua"
+
+btn = lambda t, cb_d: {"text": t, "callback_data": cb_d}
 
 class Keyboards:
     back_to_main_btn = btn("Back to main menu", Callbacks.TO_MAIN_MENU_CB)
@@ -25,8 +27,8 @@ class Keyboards:
         btn("Skills", Callbacks.CH_SKILLS_CB),
         btn("Employment types", Callbacks.CH_EMPL_CB),
         btn("Workplace type", Callbacks.CH_WORKPLACE_CB),
-        btn("Locations", Callbacks.CH_LOCATIONS_CB),
-        btn("Salary", Callbacks.CH_LOCATIONS_CB),
+        btn("Locations", Callbacks.CH_LOCATION_CB),
+        btn("Salary", Callbacks.CH_SALARY_CB),
         back_to_main_btn
     ]
     clusters_kb = [
@@ -53,7 +55,7 @@ class Keyboards:
         back_to_main_btn
     ]
     compar_loc_or_cluster_kb = [
-        btn("Choose another location", Callbacks.CH_LOCATIONS_CB),
+        btn("Choose another location", Callbacks.CHOOSE_LOCATION_CB),
         btn("Choose cluster", Callbacks.CHOOSE_CLUSTER_CB),
         back_to_main_btn
     ]
@@ -96,7 +98,8 @@ class Keyboards:
             "Get statistic": "Отримати статистику",
             "Choose other period of time": "Обрати інший період часу",
             "Choose another cluster": "Обрати ще один кластер",
-            "Choose option": "Обрати поле"
+            "Choose option": "Обрати поле",
+            "Choose other option": "Обрати інше поле"
         }
     }
 

@@ -1,4 +1,6 @@
 from typing import Callable
+from .keyboards import Keyboards
+
 class Messages:
     eng_start_cmd = "Let's begin! First, choose a statistics option:"
     ua_start_cmd = "Почнімо! Спочатку оберіть опцію статистики:"
@@ -8,20 +10,20 @@ class Messages:
     ua_choose_cluster = "Будь ласка оберіть кластер, для якого ви хотіли б отримати статистику. Майте на увазі, що статистика буде показана тільки для цього кластера."
     eng_choose_terms = "Please choose the period of time for which you want to get statistics for."
     ua_choose_terms = "Будь ласка оберіть період часу, за який ви хочете отримати статистику."
-    eng_choose_terms_add_all_cl = "Remember, that statistic will be shown for all clusters."
-    ua_choose_terms_add_all_cl = "Майте на увазі, що статистика буде показана для всіх кластерів."
-    eng_choose_terms_add_one_cl = lambda cl_name: f"Remember, that statistic will be shown only for {cl_name} cluster."
-    ua_choose_terms_add_one_cl = lambda cl_name: f"Статистика буде показана тільки для кластера {cl_name}."
+    eng_choose_terms_all_cl = eng_choose_terms + " " + "Remember, that statistic will be shown for all clusters."
+    ua_choose_terms_all_cl = ua_choose_terms + " " + "Майте на увазі, що статистика буде показана для всіх кластерів."
+    eng_choose_terms_one_cl = lambda cl_name, msg=eng_choose_terms : f"{msg} Remember, that statistic will be shown only for {cl_name} cluster."
+    ua_choose_terms_one_cl = lambda cl_name, msg=ua_choose_terms: f"{msg} Статистика буде показана тільки для кластера {cl_name}."
     eng_choose_option = "Please choose the option you want to get statistics for."
     ua_choose_option = "Будь ласка оберіть опцію, для якої ви хочете отримати статистику."
-    eng_choose_option_add = lambda cluster_name="every", term_name="10 days": f"Statistics will be shown for {cluster_name} cluster and {term_name} period of time."
-    ua_choose_option_add = lambda cluster_name="кожного", term_name="10 днів": f"Статистика буде показана для {cluster_name} кластера за період у {term_name}."
-    eng_after_graph = "Choose following action"
-    ua_after_graph = "Оберіть подальші дії"
+    eng_choose_option_add = lambda cluster_name="every", term_name="10 days", msg=eng_choose_option: f"{msg} Statistics will be shown for {cluster_name} cluster and {term_name} period of time."
+    ua_choose_option_add = lambda cluster_name="кожного", term_name="10 днів", msg=ua_choose_option: f"{msg} Статистика буде показана для {cluster_name} кластера за період у {term_name}."
     eng_choose_terms_compar = "Choose period of time for which comparative statistic will be calculated."
     ua_choose_terms_compar = "Оберіть період, за який буде обрахована порівняльна статистика."
-    eng_choose_location_compar = "Choose location for which you want to get statistic for. If you choose multiple locations, only one cluster is available to get statistic for."
-    ua_choose_location_compar = "Оберіть регіон, по якому ви хочете отримати статистику. Якщо ви оберете кілька регіонів, то подальша статистика буде доступна тільки для одного кластеру."
+    eng_choose_location = "Choose location for which you want to get statistic for."
+    ua_choose_location = "Оберіть регіон, по якому ви хочете отримати статистику."
+    eng_choose_location_compar = f"{eng_choose_location} If you choose multiple locations, only one cluster is available to get statistic for."
+    ua_choose_location_compar = f"{ua_choose_location} Якщо ви оберете кілька регіонів, то подальша статистика буде доступна тільки для одного кластеру."
     eng_already_chosen_loc = "You have chosen this location already. Choose another location or move on to choose clusters to compare."
     ua_already_chosen_loc = "Ви вже обрали цей регіон. Оберіть інший регіон або перейдіть до вибору кластерів до порівняння."
     eng_location_saved = lambda location: f"You succefully have chosen {location}. You can choose another location to compare or go to cluster choices."
@@ -42,6 +44,12 @@ class Messages:
     ua_option_saved = lambda option: f"Ви успішно обрали поле {option}. Можете обрати ще одну опцію або перейти до отримання статистики."
     greet_msg = "Привіт! Почнемо роботу? Для початку оберіть мову спілкування:\nHello! Let`s begin, shall we? First, choose a language for communication: "
     no_session_msg = "It looks like you did not choose a language yet. Please choose your language!\nСхоже ви ще не обрали мову спілкування. Будь ласка, зробіть це зараз!"
+    eng_stat_is_calculating = "Wait a minute, statistic is calculating..."
+    ua_stat_is_calculating = "Зачекайте хвилинку, статистика обраховується..."
+    eng_compar_stat_for_location = lambda location, clusters: f"Comparative statistic for location {location} and clusters {', '.join(cluster for cluster in clusters)}"
+    eng_compar_stat_for_cluster = lambda cluster, locations: f"Comparative statistic for cluster {cluster} and locations {', '.join(location for location in locations)}"
+    eng_stat_title = lambda cluster, term, location, option: f"{option.title()} statistic for cluster {cluster}, location {location} and {term} period of time"
+    ua_stat_title = lambda cluster, term, location, option: f"Статистика поля {option.title()} кластеру {cluster} для регіону {location} і за період {term}."
 
     @classmethod
     def get_msg(cls, core_name, lang, *args, **kwargs):
@@ -52,3 +60,9 @@ class Messages:
             return _msg
         else:
             return msg
+        
+    @classmethod
+    def generate_title(cls, lang, cluster, term, location, option):
+        title = cls.get_msg("stat_title", lang, cluster, term, location, option)
+        return title
+

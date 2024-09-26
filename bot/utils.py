@@ -1,8 +1,8 @@
 import os
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from .callbacks import Callbacks
-
-btn = lambda t, cb_d: {"text": t, "callback_data": cb_d}
+from .keyboards import Keyboards
+from .messages import Messages
 
 def create_markup(buttons, sizes):
     builder = InlineKeyboardBuilder()
@@ -22,5 +22,18 @@ def clear_charts(charts):
         if os.path.exists(path):
             os.remove(path)
 
-def get_message(session, user_id, core_name):
-    lang = session.get_one({"user_id": user_id}).get("lang")
+def prepare_args(cluster, term, location, option):
+    cl_k = None if cluster == Callbacks.F_ALL_CLUSTERS_CB else cluster.split("_")[0]
+    t = int(term)
+    lc = Callbacks.MAPPING.get(location)
+    key = Callbacks.MAPPING.get(option)
+    return cl_k, t, lc, key
+
+def get_msg_and_kb(msg_name, kb_name, lang, compile=[], msg_args=[], kb_add=[], filter_func=None):
+    msg = Messages.get_msg(msg_name, lang, *msg_args)
+    kb = Keyboards.get_keyboard(kb_name, lang, kb_add)
+    if filter_func:
+        kb = [btn for btn in filter(filter_func, kb)]
+    if compile:
+        compile_callbacks(kb, *compile)
+    return msg, kb
