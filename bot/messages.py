@@ -10,8 +10,8 @@ class Messages:
     ua_choose_cluster = "Будь ласка оберіть кластер, для якого ви хотіли б отримати статистику. Майте на увазі, що статистика буде показана тільки для цього кластера."
     eng_choose_terms = "Please choose the period of time for which you want to get statistics for."
     ua_choose_terms = "Будь ласка оберіть період часу, за який ви хочете отримати статистику."
-    eng_not_data = "No data has been found for your request. Probably, still parsing! Call it later."
-    ua_not_data = "Для обрахування вашого запиту недостатньо даних. Мабуть, досі збираються! Спробуйте пізніше."
+    eng_no_data = "No data has been found for your request. Probably, still parsing! Call it later."
+    ua_no_data = "Для обрахування вашого запиту недостатньо даних. Мабуть, досі збираються! Спробуйте пізніше."
     eng_choose_terms_all_cl = eng_choose_terms + " " + "Remember, that statistic will be shown for all clusters."
     ua_choose_terms_all_cl = ua_choose_terms + " " + "Майте на увазі, що статистика буде показана для всіх кластерів."
     eng_choose_terms_one_cl = lambda cl_name, msg=eng_choose_terms : f"{msg} Remember, that statistic will be shown only for {cl_name} cluster."
@@ -61,7 +61,7 @@ class Messages:
     def get_msg(cls, core_name, lang, *args, **kwargs):
         attribute_name = f"{lang}_{core_name}"
         msg = getattr(cls, attribute_name)
-        if args and isinstance(msg, Callable) or kwargs and isinstance(msg, Callable):
+        if (args or kwargs) and isinstance(msg, Callable):
             _msg = msg(*args, **kwargs)
             return _msg
         else:

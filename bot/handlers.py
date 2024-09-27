@@ -45,6 +45,7 @@ async def ReturnLocationsKb(bot, cb_query, lang, session, cluster, term):
                                 reply_markup=create_markup(kb, 1))
 
 async def ReturnOptionsKb(bot, cb_query, lang, session, cluster, term, location):
+    print("fhjffj")
     session.combine_title(cb_query, location)
     term_name = [b["text"] for b in Keyboards.get_keyboard("terms_kb", lang) if b["callback_data"] == term][0]
     try:
@@ -106,8 +107,11 @@ async def ReturnComparClustersMenu(bot, cb_query, lang):
 async def ReturnComparOptionsMenu(bot, cb_query, lang, session:Session):
     query = session.get_query()
     locations = query.get("locations")
-    filter_func = lambda btn: btn["callback_data"] not in [Callbacks.CH_TECHS_CB, Callbacks.CH_SKILLS_CB] if len(locations) == 1 else None                                                      
-    msg, kb = get_msg_and_kb("choose_option", "stats_options_kb", lang, compile=[Callbacks.COMPARATIVE_CB], filter_func=filter_func)
+    print(locations)
+    if len(locations) > 1:
+        f_f = lambda btn: btn["callback_data"] not in [Callbacks.CH_TECHS_CB, Callbacks.CH_SKILLS_CB]
+    else: f_f = None                                           
+    msg, kb = get_msg_and_kb("choose_option", "stats_options_kb", lang, compile=[Callbacks.COMPARATIVE_CB], filter_func=f_f)
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                 message_id=cb_query.message.message_id, 
                                 reply_markup=create_markup(kb, 1))
@@ -139,8 +143,8 @@ async def HandleComparClustersMenu(bot, cb_query, lang, session, cluster):
     cl_key = cluster.split("_")[0]
     if len(locations) > 1 and not clusters:
         session.add_to_query("clusters", [cl_key])
-        filter_func = lambda btn: btn["callback_data"] != Callbacks.CHOOSE_OPTION_CB
-        msg, kb = get_msg_and_kb("compar_only_one_cluster", "stats_options_kb", lang, compile=[Callbacks.COMPARATIVE_CB])
+        f_f = lambda btn: btn["callback_data"] not in [Callbacks.CH_TECHS_CB, Callbacks.CH_SKILLS_CB]
+        msg, kb = get_msg_and_kb("compar_only_one_cluster", "stats_options_kb", lang, compile=[Callbacks.COMPARATIVE_CB], filter_func=f_f)
         await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                 message_id=cb_query.message.message_id, 
                                 reply_markup=create_markup(kb, 1))
