@@ -31,7 +31,7 @@ def prepare_args(cluster, term, location, option):
 
 def get_msg_and_kb(msg_name, kb_name, lang, compile=[], msg_args=[], kb_add=[], filter_func=None):
     msg = Messages.get_msg(msg_name, lang, *msg_args)
-    kb = Keyboards.get_keyboard(kb_name, lang, kb_add)
+    kb = Keyboards.get_keyboard(kb_name, lang, add=kb_add)
     if filter_func:
         kb = [btn for btn in filter(filter_func, kb)]
     if compile:

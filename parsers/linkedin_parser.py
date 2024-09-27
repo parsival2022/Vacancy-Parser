@@ -82,7 +82,7 @@ class LinkedinParser(Parser):
         location_txt = self.driver.find_element(*self.search_loc_input).get_attribute("data-job-search-box-location-input-trigger")
         if not lc == location_txt:
             self.fill_input_element(*self.search_loc_input, lc)
-            self.wait(3)
+            self.wait(5)
             self.fill_input_element(*self.search_loc_input, Keys.ENTER)
             self.wait((8, 10))
 
@@ -159,6 +159,7 @@ class LinkedinParser(Parser):
     @repeat_if_fail(WebDriverException, 7)
     def perform_job_parsing(self, search_str, loc):
         urls:list[dict] = self.db_manager.get_many({"location": loc, "keyword": search_str, "completed": False})
+        if not urls: return
         feed = self.driver.current_window_handle
 
         for url in urls:
@@ -194,7 +195,7 @@ class LinkedinParser(Parser):
         for location in locations:
             for keyword in keywords:
                 self.wait((10, 15))
-                # self.perform_jobs_search(keyword, location)
+                self.perform_jobs_search(keyword, location)
                 self.perform_job_parsing(keyword, location)
         self.driver.quit()
 
@@ -205,11 +206,6 @@ PYTHON_KWL = CLUSTERS[PYTHON]["keywords"]["ln_kw"]
 JAVA_KWL = CLUSTERS[JAVA]["keywords"]["ln_kw"]
 JS_KWL = CLUSTERS[JS]["keywords"]["ln_kw"]
 CPP_KWL = CLUSTERS[CPP]["keywords"]["ln_kw"]
-
-EU = "European Union"
-USA = "United States"
-UA = "Ukraine"
-UK = "United Kingdom"
 
 LN_MODELS = {LN_VACANCY: Vacancy, LN_BASIC_VACANCY: BasicVacancy} 
 LN_LOCATIONS = (EU) 

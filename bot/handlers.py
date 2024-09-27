@@ -52,7 +52,7 @@ async def ReturnOptionsKb(bot, cb_query, lang, session, cluster, term, location)
         msg_args = [cluster_name, term_name]
     except IndexError:
         msg_args = [term_name]
-    msg, kb = get_msg_and_kb("choose_option_add", "stats_options_kb", lang, compile=[cluster, term, location], msg_args=msg_args)
+    msg, kb = get_msg_and_kb("choose_option_add", "stats_options_kb", lang, compile=[cluster, term, location], msg_args=msg_args,)
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                      message_id=cb_query.message.message_id, 
                                      reply_markup=create_markup(kb, 1))
@@ -106,8 +106,8 @@ async def ReturnComparClustersMenu(bot, cb_query, lang):
 async def ReturnComparOptionsMenu(bot, cb_query, lang, session:Session):
     query = session.get_query()
     locations = query.get("locations")
-    filter_func = lambda btn: btn["callback_data"] not in [Callbacks.CH_TECHS_CB, Callbacks.CH_SKILLS_CB] if len(locations) == 1 else None
-    msg, kb = get_msg_and_kb("choose_option", "stats_options_kb", lang, compile=[Callbacks.COMPARATIVE_CB], filter_func=filter_func)
+    filter_func = lambda btn: btn["callback_data"] not in [Callbacks.CH_TECHS_CB, Callbacks.CH_SKILLS_CB] if len(locations) == 1 else None                                                      
+    msg, kb = get_msg_and_kb("choose_option", "stats_options_kb", lang, compile=[Callbacks.COMPARATIVE_CB], filter_func=filter_func, kb_add=["count_btn "])
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                 message_id=cb_query.message.message_id, 
                                 reply_markup=create_markup(kb, 1))
@@ -139,6 +139,7 @@ async def HandleComparClustersMenu(bot, cb_query, lang, session, cluster):
     cl_key = cluster.split("_")[0]
     if len(locations) > 1 and not clusters:
         session.add_to_query("clusters", [cl_key])
+        filter_func = lambda btn: btn["callback_data"] != Callbacks.CHOOSE_OPTION_CB
         msg, kb = get_msg_and_kb("compar_only_one_cluster", "stats_options_kb", lang, compile=[Callbacks.COMPARATIVE_CB])
         await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                 message_id=cb_query.message.message_id, 

@@ -42,8 +42,8 @@ class Callbacks:
     CH_SKILLS_CB = "skls"
     CH_EMPL_CB = "emplty"
     CH_WORKPLACE_CB = "workplty"
-    CH_LOCATION_CB = "locs"
     CH_SALARY_CB = "slry"
+    CH_COUNT_CB = "cnt_vcns"
 
     CLUSTERS = (F_ALL_CLUSTERS_CB,
                 F_PYTHON_CLUSTER_CB,
@@ -56,8 +56,8 @@ class Callbacks:
                CH_SKILLS_CB, 
                CH_EMPL_CB, 
                CH_WORKPLACE_CB, 
-               CH_LOCATION_CB,
-               CH_SALARY_CB)
+               CH_SALARY_CB,
+               CH_COUNT_CB)
 
     TERMS = (TERM_10D_CB,
              TERM_20D_CB,
@@ -80,7 +80,6 @@ class Callbacks:
         CH_SKILLS_CB: "skills",
         CH_EMPL_CB: "employment_type", 
         CH_WORKPLACE_CB: "workplace_type",
-        CH_LOCATION_CB: "location",
         CH_SALARY_CB: "salary",
         LOC_UA_CB: UA,
         LOC_UK_CB: UK,

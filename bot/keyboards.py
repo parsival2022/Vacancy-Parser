@@ -10,7 +10,8 @@ btn = lambda t, cb_d: {"text": t, "callback_data": cb_d}
 
 class Keyboards:
     back_to_main_btn = btn("Back to main menu", Callbacks.TO_MAIN_MENU_CB)
-
+    count_btn = btn("Count vacancies", Callbacks.CH_COUNT_CB)
+    
     main_menu_kb = [
         btn("Get statistic for cluster", Callbacks.CHOOSE_CLUSTER_CB),
         btn("Get statistic for all clusters", Callbacks.F_ALL_CLUSTERS_CB),
@@ -27,7 +28,6 @@ class Keyboards:
         btn("Skills", Callbacks.CH_SKILLS_CB),
         btn("Employment types", Callbacks.CH_EMPL_CB),
         btn("Workplace type", Callbacks.CH_WORKPLACE_CB),
-        btn("Locations", Callbacks.CH_LOCATION_CB),
         btn("Salary", Callbacks.CH_SALARY_CB),
         back_to_main_btn
     ]
@@ -99,7 +99,8 @@ class Keyboards:
             "Choose other period of time": "Обрати інший період часу",
             "Choose another cluster": "Обрати ще один кластер",
             "Choose option": "Обрати поле",
-            "Choose other option": "Обрати інше поле"
+            "Choose other option": "Обрати інше поле",
+            "Count vacancies": "Підрахувати вакансії"
         }
     }
 
