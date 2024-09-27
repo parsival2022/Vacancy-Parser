@@ -64,67 +64,33 @@ class StatisticManager:
             data[cluster_key] = self.cluster_count(cluster_key)
         return data
     
-    def get_stats_for_cluster(self, cluster_key, key, title, term=None, location=None, w_key_mode=True):
+    def get_stats_for_cluster(self, cluster_key, key, title=[], term=None, location=None, w_key_mode=True):
         data = {}
         cl_title = self.clusters[cluster_key]["name"]
         pipeline = self.build_pipeline(cluster_key, key, term, location)
         res = self.db_manager.aggregate(pipeline) 
-        print(res)
         for m_r in [{r["_id"]: r["count"]} for r in res if r["_id"] != NOT_DEFINED]:
             data.update(m_r)
         if key == "technologies":
             normalized_data, other_techs = self.normalize_technologies(data, cl_title)
-            print(normalized_data)
             data = normalized_data
         if key == "skills":
             normalized_skills = self.normalize_skills(data, limit=20)
             data = normalized_skills
-        t = Messages.generate_title(*title)
-        data["graph_title"] = t
-        print(data)
-        if w_key_mode:
-            return {cl_title: data}
-        else: 
-            return data
-    
-    def get_stats_for_clusters(self, key, title, term=None, location=None):
+        if title:
+            t = Messages.generate_title(*title)
+            data["graph_title"] = t
+        return {cl_title: data} if w_key_mode else data
+
+    def get_stats_for_clusters(self, key, title=[], term=None, location=None):
         data = {}
         for cl_key in self.clusters.keys():
             title[1] = self.clusters[cl_key]["name"]
-            stat = self.get_stats_for_cluster(cl_key, key, title, term=term, location=location)
+            stat = self.get_stats_for_cluster(cl_key, key, title=title, term=term, location=location)
             data.update(stat)
         return data
     
-    def get_stats_chart(self, key, term, location, title, cl_key=None, chart="bar", **kwargs) -> tuple[list[str], dict]:
-        if not cl_key:
-            stat = self.get_stats_for_clusters(key, title, term=term, location=location)
-        else:
-            stat = self.get_stats_for_cluster(cl_key, key, title, term=term, location=location)
-        filenames = self.generate_pie_chart(stat, **kwargs) if chart == "pie" else self.generate_bar_chart(stat, **kwargs)
-        return filenames, stat
-    
-    def get_comparative_stats_chart(self, query, title, **kwargs):
-        results = {}
-        term = query.get("term")
-        locations = query.get("locations")
-        clusters = query.get("clusters")
-        options = query.get("options")
-        top_res = {}
-        for location in locations:
-            loc_res = {}
-            for cluster_key in clusters:
-                cluster_res = {}
-                for key in options:
-                    key_res = self.get_stats_for_cluster(cluster_key, key, term=term, location=location)
-                    cluster_res[key] = key_res
-                loc_res[cluster_key] = cluster_res
-            top_res[location] = loc_res
-        print(top_res)
-        filenames = self.generate_comparative_bar_chart(top_res, title, **kwargs)
-        return filenames
-    
     def generate_pie_chart(self, stats):
-        print(stats)
         filenames = []
         for k, v in stats.items():
             title = v.pop("graph_title")
@@ -154,7 +120,6 @@ class StatisticManager:
             plt.clf() 
             filenames.append(filename)
         return filenames
-
     
     def generate_bar_chart(self, stats, x_label="Vacancies", y_label="Values"): 
         filenames = []
@@ -174,38 +139,80 @@ class StatisticManager:
             filenames.append(filename)
         return filenames
  
-  
     def generate_comparative_bar_chart(self, stats:dict, title): 
-        width = 0.35
         filenames = []
+        location_keys = []
+        cluster_keys = []
+        values_to_draw = []
+        data = []
         tmp = datetime.now().timestamp()
-        clusters = stats.keys()
-        keys = sorted(set(key for v in stats.values() for key in v.keys()))
-        data = {}
-        for cl_key in clusters:
-            res = []
+        for loc_key, loc_obj in stats.items():
+            location_keys.append(loc_key)
+            for cl_key, cl_obj in loc_obj.items():
+                cluster_keys.append(cl_key)
+                for lvl_key, lvl_obj in cl_obj.items():
+                    values_to_draw.append(lvl_obj)
+        if not values_to_draw:
+            return None, None
+        keys_to_compare = location_keys if len(location_keys) > 1 else cluster_keys
+        keys = list(set(key for v in values_to_draw for key in v.keys()))
+        for i, comp_key in enumerate(keys_to_compare):
+            obj = values_to_draw[i]
+            res = {}
             for key in keys:
-                v = stats[cl_key].get(key) or 0
-                res.append(v)
-            data[cl_key] = res
+                v = obj.get(key) or 0
+                res[key] = v
+            data.append(res)
         x = np.arange(len(keys))
-        fig, ax = plt.subplots()
-        for i, item in enumerate(data.items()):
-            index = i + 1
-            k, v = item
-            _x = x - width/2 if index % 2 != 0 else x + width/2
-            ax.bar(_x, v, width, label=k)
-        # ax.set_xlabel(xlabel)
-        # ax.set_ylabel(ylabel)
-        ax.set_title(title)
-        ax.set_xticks(x)
-        ax.set_xticklabels(keys)
+        fig, ax = plt.subplots(figsize=(10, 8))
+        num_bars = len(data)
+        width = 0.8 / num_bars
+        offset = np.linspace(-0.4, 0.4, num_bars, endpoint=False)
+        for i, item in enumerate(data):
+            label = keys_to_compare[i]
+            keys = item.keys()
+            values = item.values()
+            _x = x + offset[i] 
+            ax.bar(_x, values, width, label=label)
+        ax.set_title(title, pad=20)
+        ax.set_xticks(x + offset.mean())
+        ax.set_xticklabels(keys, rotation=45, ha="right")
         ax.legend()
-        plt.tight_layout()
+        plt.tight_layout(pad=3)
         filename = f"{title}_{tmp}_barchart.png"
         plt.savefig(f"charts/{filename}", bbox_inches='tight')
         filenames.append(filename)
-        return filenames
+        return filenames, stats
+    
+    def get_stats_chart(self, key, term, location, title, cl_key=None, chart="bar", **kwargs) -> tuple[list[str], dict]:
+        if not cl_key:
+            stat = self.get_stats_for_clusters(key, title=title, term=term, location=location)
+        else:
+            stat = self.get_stats_for_cluster(cl_key, key, title=title, term=term, location=location)
+        filenames = self.generate_pie_chart(stat, **kwargs) if chart == "pie" else self.generate_bar_chart(stat, **kwargs)
+        return filenames, stat
+    
+    def get_comparative_stats_chart(self, query, title, **kwargs):
+        term = query.get("term")
+        locations = query.get("locations")
+        clusters = query.get("clusters")
+        options = query.get("options")
+        top_res = {}
+        for location in locations:
+            loc_res = {}
+            for cl_key in clusters:
+                cl_name = self.clusters.get(cl_key)["name"]
+                cluster_res = {}
+                for key in options:
+                    key_res = self.get_stats_for_cluster(cl_key, key, term=term, location=location, w_key_mode=False)
+                    cluster_res[key.title()] = key_res
+                loc_res[cl_name] = cluster_res
+            top_res[location] = loc_res
+        print(top_res)
+        filenames, stats = self.generate_comparative_bar_chart(top_res, title, **kwargs)
+        return filenames, stats
+
+
 
 
  

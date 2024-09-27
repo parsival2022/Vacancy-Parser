@@ -212,6 +212,6 @@ UA = "Ukraine"
 UK = "United Kingdom"
 
 LN_MODELS = {LN_VACANCY: Vacancy, LN_BASIC_VACANCY: BasicVacancy} 
-LN_LOCATIONS = (USA, EU, UK) 
+LN_LOCATIONS = (EU) 
 LN_KEYWORDS = (PYTHON_KWL, JAVA_KWL, JS_KWL, CPP_KWL)
 

@@ -59,7 +59,7 @@ class Parser:
         options.add_argument("--disable-gpu")
         options.add_argument("--disable-gpu-compositing")
         options.add_argument("--headless")
-        options.add_argument("--disable-software-rasterizer")
+        # options.add_argument("--disable-software-rasterizer")
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-webrtc")

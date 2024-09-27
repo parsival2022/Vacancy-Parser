@@ -2,14 +2,16 @@ from typing import Callable
 from .keyboards import Keyboards
 
 class Messages:
-    eng_start_cmd = "Let's begin! First, choose a statistics option:"
-    ua_start_cmd = "Почнімо! Спочатку оберіть опцію статистики:"
+    eng_start_cmd = "Let's begin! Choose the option for statistic:"
+    ua_start_cmd = "Почнімо! Оберіть опцію статистики:"
     eng_choose_lang = "Choose a language for communication:"
     ua_choose_lang = "Оберіть мову спілкування:"
     eng_choose_cluster = "Please choose the cluster you want to get statistics for. Remember, that statistic will be shown only for that cluster."
     ua_choose_cluster = "Будь ласка оберіть кластер, для якого ви хотіли б отримати статистику. Майте на увазі, що статистика буде показана тільки для цього кластера."
     eng_choose_terms = "Please choose the period of time for which you want to get statistics for."
     ua_choose_terms = "Будь ласка оберіть період часу, за який ви хочете отримати статистику."
+    eng_not_data = "No data has been found for your request. Probably, still parsing! Call it later."
+    ua_not_data = "Для обрахування вашого запиту недостатньо даних. Мабуть, досі збираються! Спробуйте пізніше."
     eng_choose_terms_all_cl = eng_choose_terms + " " + "Remember, that statistic will be shown for all clusters."
     ua_choose_terms_all_cl = ua_choose_terms + " " + "Майте на увазі, що статистика буде показана для всіх кластерів."
     eng_choose_terms_one_cl = lambda cl_name, msg=eng_choose_terms : f"{msg} Remember, that statistic will be shown only for {cl_name} cluster."
@@ -46,8 +48,10 @@ class Messages:
     no_session_msg = "It looks like you did not choose a language yet. Please choose your language!\nСхоже ви ще не обрали мову спілкування. Будь ласка, зробіть це зараз!"
     eng_stat_is_calculating = "Wait a minute, statistic is calculating..."
     ua_stat_is_calculating = "Зачекайте хвилинку, статистика обраховується..."
-    eng_compar_stat_for_location = lambda location, clusters: f"Comparative statistic for location {location} and clusters {', '.join(cluster for cluster in clusters)}"
-    eng_compar_stat_for_cluster = lambda cluster, locations: f"Comparative statistic for cluster {cluster} and locations {', '.join(location for location in locations)}"
+    eng_compar_stat_for_location = lambda location, clusters: f"Comparative statistic for location {location} and clusters {', '.join(cluster.capitalize() for cluster in clusters)}"
+    ua_compar_stat_for_location = lambda location, clusters: f"Порівняльна статистика для регіону {location} і кластерів {', '.join(cluster.capitalize() for cluster in clusters)}"
+    eng_compar_stat_for_cluster = lambda cluster, locations: f"Comparative statistic for cluster {cluster.capitalize()} and locations {', '.join(location for location in locations)}"
+    ua_compar_stat_for_cluster = lambda cluster, locations: f"Порівняльна статистика для кластеру {cluster.capitalize()} і регіонів {', '.join(location for location in locations)}"
     eng_stat_title = lambda cluster, term, location, option: f"{option.title()} statistic for cluster {cluster}, location {location} and {term} period of time"
     ua_stat_title = lambda cluster, term, location, option: f"Статистика поля {option.title()} кластеру {cluster} для регіону {location} і за період {term}."
 
