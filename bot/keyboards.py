@@ -10,8 +10,7 @@ btn = lambda t, cb_d: {"text": t, "callback_data": cb_d}
 
 class Keyboards:
     back_to_main_btn = btn("Back to main menu", Callbacks.TO_MAIN_MENU_CB)
-    count_btn = btn("Count vacancies", Callbacks.CH_COUNT_CB)
-    
+
     main_menu_kb = [
         btn("Get statistic for cluster", Callbacks.CHOOSE_CLUSTER_CB),
         btn("Get statistic for all clusters", Callbacks.F_ALL_CLUSTERS_CB),
@@ -29,6 +28,7 @@ class Keyboards:
         btn("Employment types", Callbacks.CH_EMPL_CB),
         btn("Workplace type", Callbacks.CH_WORKPLACE_CB),
         btn("Salary", Callbacks.CH_SALARY_CB),
+        btn("Count vacancies", Callbacks.CH_COUNT_CB),
         back_to_main_btn
     ]
     clusters_kb = [

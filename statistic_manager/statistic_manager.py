@@ -28,6 +28,10 @@ class StatisticManager:
                                                     "count": { "$sum": 1 }
                                                 }},  
                                                 {"$sort": { "count": -1 }}]
+    pipeline_query_for_count = {"$group": {
+                                    "_id": None,  
+                                    "count": {"$sum": 1}}
+                                }
     pipeline_query_location = lambda self, location: {"$match": {"location": location}}
 
     def __init__(self, db_manager) -> None:
@@ -41,7 +45,10 @@ class StatisticManager:
             pipeline.extend(self.pipeline_query_term(time))
         if location:
             pipeline.append(self.pipeline_query_location(location))
-        pipeline.extend(self.pipeline_query_for_key(key))
+        if key:
+            pipeline.extend(self.pipeline_query_for_key(key))
+        else: 
+            pipeline.append(self.pipeline_query_for_count)
         return pipeline
         
     def normalize_skills(self, skills, limit=10):
@@ -53,23 +60,13 @@ class StatisticManager:
         filt_data = {k: v for k, v in techs.items() if k in cl_techs}
         filt_other = {k: v for k, v in techs.items() if k in OTHER_TECHS}
         return filt_data, filt_other
-
-    def cluster_count(self, cluster_key):
-        res = self.db_manager.count({"clusters": self.clusters[cluster_key]["name"]})
-        return res
-    
-    def count_clusters(self):
-        data = {}
-        for cluster_key in self.clusters.keys():
-            data[cluster_key] = self.cluster_count(cluster_key)
-        return data
     
     def get_stats_for_cluster(self, cluster_key, key, title=[], term=None, location=None, w_key_mode=True):
         data = {}
         cl_title = self.clusters[cluster_key]["name"]
         pipeline = self.build_pipeline(cluster_key, key, term, location)
         res = self.db_manager.aggregate(pipeline) 
-        for m_r in [{r["_id"]: r["count"]} for r in res if r["_id"] != NOT_DEFINED]:
+        for m_r in [{(r["_id"] if r["_id"] else "total"): r["count"]} for r in res if r["_id"] != NOT_DEFINED]:
             data.update(m_r)
         if key == "technologies":
             normalized_data, other_techs = self.normalize_technologies(data, cl_title)
@@ -152,7 +149,7 @@ class StatisticManager:
                 cluster_keys.append(cl_key)
                 for lvl_key, lvl_obj in cl_obj.items():
                     values_to_draw.append(lvl_obj)
-        if not values_to_draw:
+        if all(not el for el in values_to_draw):
             return None, None
         keys_to_compare = location_keys if len(location_keys) > 1 else cluster_keys
         keys = list(set(key for v in values_to_draw for key in v.keys()))
@@ -170,12 +167,13 @@ class StatisticManager:
         offset = np.linspace(-0.4, 0.4, num_bars, endpoint=False)
         for i, item in enumerate(data):
             label = keys_to_compare[i]
-            keys = item.keys()
             values = item.values()
             _x = x + offset[i] 
             ax.bar(_x, values, width, label=label)
         ax.set_title(title, pad=20)
         ax.set_xticks(x + offset.mean())
+        if len(keys) == 1:
+            keys = ["Quantity" for key in keys if key == "None"]
         ax.set_xticklabels(keys, rotation=45, ha="right")
         ax.legend()
         plt.tight_layout(pad=3)
@@ -205,7 +203,7 @@ class StatisticManager:
                 cluster_res = {}
                 for key in options:
                     key_res = self.get_stats_for_cluster(cl_key, key, term=term, location=location, w_key_mode=False)
-                    cluster_res[key.title()] = key_res
+                    cluster_res[(key.title() if key else "Total")] = key_res
                 loc_res[cl_name] = cluster_res
             top_res[location] = loc_res
         print(top_res)

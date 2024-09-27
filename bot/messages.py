@@ -54,6 +54,8 @@ class Messages:
     ua_compar_stat_for_cluster = lambda cluster, locations: f"Порівняльна статистика для кластеру {cluster.capitalize()} і регіонів {', '.join(location for location in locations)}"
     eng_stat_title = lambda cluster, term, location, option: f"{option.title()} statistic for cluster {cluster}, location {location} and {term} period of time"
     ua_stat_title = lambda cluster, term, location, option: f"Статистика поля {option.title()} кластеру {cluster} для регіону {location} і за період {term}."
+    eng_count_option = "Comparative statistics will be calculated based on the number of vacancies for the parameters you have selected."
+    ua_count_option = "Порівняльна статистика буде підрахована за кількістю вакансій за обраними вами параметрами."
 
     @classmethod
     def get_msg(cls, core_name, lang, *args, **kwargs):

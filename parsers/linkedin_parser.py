@@ -10,10 +10,10 @@ from selenium.common.exceptions import (NoSuchElementException,
                                         SessionNotCreatedException)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from clusters import *
 from models import BasicVacancyModel
 from .decorators import repeat_if_fail, execute_if_fail
 from .parser import Parser
+from clusters import *
 
 load_dotenv()
 
@@ -208,6 +208,6 @@ JS_KWL = CLUSTERS[JS]["keywords"]["ln_kw"]
 CPP_KWL = CLUSTERS[CPP]["keywords"]["ln_kw"]
 
 LN_MODELS = {LN_VACANCY: Vacancy, LN_BASIC_VACANCY: BasicVacancy} 
-LN_LOCATIONS = (EU) 
+LN_LOCATIONS = (EU,) 
 LN_KEYWORDS = (PYTHON_KWL, JAVA_KWL, JS_KWL, CPP_KWL)
 
