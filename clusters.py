@@ -3,6 +3,8 @@ PYTHON = "python"
 JS = "js"
 JAVA = "java"
 CPP = "c++"
+PHP = "php"
+GO = "go"
 
 EU = "European Union"
 USA = "United States"
@@ -141,7 +143,40 @@ CLUSTERS = {
                         "Premake"
                     ),
     "keywords": {"ln_kw": "c++",
-                 "dj_kw": "CPP"}},               
+                 "dj_kw": "CPP"}},              
+    PHP: {
+     "name": "PHP",
+     "technologies": (
+                        "Laravel",
+                        "Symfony",
+                        "CodeIgniter",
+                        "Zend Framework",
+                        "Phalcon",
+                        "Slim",
+                        "CakePHP",
+                        "Yii",
+                        "FuelPHP",
+                        "Lumen",
+                        "Wordpress"
+                    ),
+    "keywords": {"ln_kw": "php",
+                 "dj_kw": "PHP"}},              
+    GO: {
+     "name": "Golang",
+     "technologies": (
+                        "Gin",
+                        "Echo",
+                        "Fiber",
+                        "Beego",
+                        "Revel",
+                        "Chi",
+                        "Buffalo",
+                        "Iris",
+                        "Martini",
+                        "Gorilla",
+                    ),
+    "keywords": {"ln_kw": "golang",
+                 "dj_kw": "Golang"}},              
 }
 
 OTHER_TECHS = ["Git", 
