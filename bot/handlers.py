@@ -162,7 +162,6 @@ async def HandleComparClustersMenu(bot, cb_query, lang, session, cluster):
                                     reply_markup=create_markup(kb, 1)) 
         
 async def HandleComparOptionsMenu(bot, cb_query, lang, session, opt):
-    print("options dfdfdfdfd")
     query = session.get_query()
     options = query.get("options")
     option = Callbacks.MAPPING.get(opt) or None
