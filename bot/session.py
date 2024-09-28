@@ -49,10 +49,8 @@ class Session:
     
     def combine_title(self, cb_query, cb):
         kb = cb_query.message.reply_markup.inline_keyboard
-        for b in kb:
-            print(b[0].callback_data)
         try:
-            text = [b[0].text for b in kb if b and re.search(rf"\b{cb}\b", b[0].callback_data)][0]
+            text = [b[0].text for b in kb if b and re.search(rf"\b{re.escape(cb)}\b", b[0].callback_data)][0]
         except KeyError:
             text = None
         if not self.get_query():
