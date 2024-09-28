@@ -208,6 +208,6 @@ JS_KWL = CLUSTERS[JS]["keywords"]["ln_kw"]
 CPP_KWL = CLUSTERS[CPP]["keywords"]["ln_kw"]
 
 LN_MODELS = {LN_VACANCY: Vacancy, LN_BASIC_VACANCY: BasicVacancy} 
-LN_LOCATIONS = (EU,) 
+LN_LOCATIONS = (EU, USA, UK) 
 LN_KEYWORDS = (PYTHON_KWL, JAVA_KWL, JS_KWL, CPP_KWL)
 

@@ -61,18 +61,22 @@ class BasicVacancyModel(BaseModel):
         return self
     
     def define_cluster(self):
+        _ = lambda s: s.lower().replace(" ", "")
         for v in CLUSTERS.values():
-            if self.keyword in v["keywords"].values() and not v["name"] in self.clusters:
-                self.clusters.append(v["name"])
-            if re.search(rf"\b{v['name'].lower()}\b", self.title) and not v["name"] in self.clusters:
-                self.clusters.append(v["name"])
+            if not v["name"] in self.clusters:
+                if re.search(rf"\b{v['name'].lower()}\b", self.title):
+                    self.clusters.append(v["name"])
+                if re.search(rf"\b{_(v['name'])}\b", self.description.lower()):
+                    self.clusters.append(v["name"])
+                if any(tech in v["technologies"] for tech in self.technologies):
+                    self.clusters.append(v["name"])
         return self
     
     @model_validator(mode="after")
     def normalization_suite(self):
-        self.define_cluster()
         self.check_level()
         self.extract_technologies()
+        self.define_cluster()
         return self
     
     @classmethod
