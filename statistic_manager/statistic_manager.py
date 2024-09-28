@@ -37,6 +37,8 @@ class StatisticManager:
 
     def __init__(self, db_manager) -> None:
         self.db_manager:MongoManager = db_manager
+        if not os.path.exists(self.chart_name):
+            os.makedirs(self.chart_name)
 
     def build_pipeline(self, cluster_key, key, term, location):
         pipeline = []
@@ -114,8 +116,6 @@ class StatisticManager:
             ax.set_title(title, pad=20, loc='center')
             filename = f"{tmp}_{k}_piechart.png"
             plt.tight_layout(rect=[0, 0, 1, 0.95])
-            if not os.path.exists(self.chart_name):
-                os.makedirs(self.chart_name)
             plt.savefig(f"charts/{filename}", bbox_inches='tight')
             plt.clf() 
             filenames.append(filename)
@@ -135,8 +135,6 @@ class StatisticManager:
             ax.set_ylabel(y_label)
             ax.set_title(title)
             filename = f"{title}_{tmp}_barchart.png"
-            if not os.path.exists(self.chart_name):
-                os.makedirs(self.chart_name)
             plt.savefig(f"charts/{filename}", bbox_inches='tight')
             filenames.append(filename)
         return filenames
@@ -183,8 +181,6 @@ class StatisticManager:
         ax.legend()
         plt.tight_layout(pad=3)
         filename = f"{title}_{tmp}_barchart.png"
-        if not os.path.exists(self.chart_name):
-            os.makedirs(self.chart_name)
         plt.savefig(f"charts/{filename}", bbox_inches='tight')
         filenames.append(filename)
         return filenames, stats
