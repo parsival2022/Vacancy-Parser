@@ -22,6 +22,7 @@ async def ReturnLangsKb(bot, cb_query, lang):
     
 async def ReturnClustersKb(bot, cb_query, lang):
     msg, kb = get_msg_and_kb("choose_cluster", "clusters_kb",  lang)
+    print(kb)
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                 message_id=cb_query.message.message_id, 
                                 reply_markup=create_markup(kb, 1))
@@ -107,8 +108,7 @@ async def ReturnComparClustersMenu(bot, cb_query, lang):
 async def ReturnComparOptionsMenu(bot, cb_query, lang, session:Session):
     query = session.get_query()
     locations = query.get("locations")
-    print(locations)
-    if len(locations) > 1:
+    if len(locations) == 1:
         f_f = lambda btn: btn["callback_data"] not in [Callbacks.CH_TECHS_CB, Callbacks.CH_SKILLS_CB]
     else: f_f = None                                           
     msg, kb = get_msg_and_kb("choose_option", "stats_options_kb", lang, compile=[Callbacks.COMPARATIVE_CB], filter_func=f_f)
@@ -141,10 +141,9 @@ async def HandleComparClustersMenu(bot, cb_query, lang, session, cluster):
     locations = query.get("locations")
     clusters = query.get("clusters")
     cl_key = cluster.split("_")[0]
-    if len(locations) > 1 and not clusters:
+    if len(locations) > 1:
         session.add_to_query("clusters", [cl_key])
-        f_f = lambda btn: btn["callback_data"] not in [Callbacks.CH_TECHS_CB, Callbacks.CH_SKILLS_CB]
-        msg, kb = get_msg_and_kb("compar_only_one_cluster", "stats_options_kb", lang, compile=[Callbacks.COMPARATIVE_CB], filter_func=f_f)
+        msg, kb = get_msg_and_kb("compar_only_one_cluster", "stats_options_kb", lang, compile=[Callbacks.COMPARATIVE_CB])
         await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                 message_id=cb_query.message.message_id, 
                                 reply_markup=create_markup(kb, 1))
@@ -153,8 +152,8 @@ async def HandleComparClustersMenu(bot, cb_query, lang, session, cluster):
             msg, kb = get_msg_and_kb("compar_already_chosen_cluster", "compar_cluster_or_option_kb", lang, compile=[Callbacks.COMPARATIVE_CB])
         if not clusters:
             session.add_to_query("clusters", [cl_key])
-            filter_func = lambda btn: btn["callback_data"] != Callbacks.CHOOSE_OPTION_CB
-            msg, kb = get_msg_and_kb("compar_choose_another_cluster", "compar_cluster_or_option_kb", lang, compile=[Callbacks.COMPARATIVE_CB], filter_func=filter_func)
+            f_f = lambda btn: btn["callback_data"] != Callbacks.CHOOSE_OPTION_CB
+            msg, kb = get_msg_and_kb("compar_choose_another_cluster", "compar_cluster_or_option_kb", lang, compile=[Callbacks.COMPARATIVE_CB], filter_func=f_f)
         if clusters and not cl_key in clusters:
             session.push_to_query("clusters", cl_key)
             cl_name = CLUSTERS.get(cl_key)["name"]
@@ -164,6 +163,7 @@ async def HandleComparClustersMenu(bot, cb_query, lang, session, cluster):
                                     reply_markup=create_markup(kb, 1)) 
         
 async def HandleComparOptionsMenu(bot, cb_query, lang, session, opt):
+    print("options dfdfdfdfd")
     query = session.get_query()
     options = query.get("options")
     option = Callbacks.MAPPING.get(opt) or None
