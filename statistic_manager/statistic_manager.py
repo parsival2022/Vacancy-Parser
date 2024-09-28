@@ -91,12 +91,15 @@ class StatisticManager:
         return data
     
     def generate_pie_chart(self, stats):
+        print(stats)
         filenames = []
         for k, v in stats.items():
             title = v.pop("graph_title")
             tmp = datetime.now().timestamp()
             labels = [l for l in v.keys()]
             values = [vl for vl in v.values()]
+            if not values:
+                continue
             total = sum(values)
             legend_labels = [f"{label} ({value / total:.1%})" for label, value in zip(labels, values)]
             explodes = [0.06 for _ in range(len(values))]
@@ -119,7 +122,7 @@ class StatisticManager:
             plt.savefig(f"charts/{filename}", bbox_inches='tight')
             plt.clf() 
             filenames.append(filename)
-        return filenames
+        return filenames, stats
     
     def generate_bar_chart(self, stats, x_label="Vacancies", y_label="Values"): 
         filenames = []
@@ -190,7 +193,7 @@ class StatisticManager:
             stat = self.get_stats_for_clusters(key, title=title, term=term, location=location)
         else:
             stat = self.get_stats_for_cluster(cl_key, key, title=title, term=term, location=location)
-        filenames = self.generate_pie_chart(stat, **kwargs) if chart == "pie" else self.generate_bar_chart(stat, **kwargs)
+        filenames, stat = self.generate_pie_chart(stat, **kwargs) if chart == "pie" else self.generate_bar_chart(stat, **kwargs)
         return filenames, stat
     
     def get_comparative_stats_chart(self, query, title, **kwargs):
