@@ -45,7 +45,6 @@ async def ReturnLocationsKb(bot, cb_query, lang, session, cluster, term):
                                 reply_markup=create_markup(kb, 1))
 
 async def ReturnOptionsKb(bot, cb_query, lang, session, cluster, term, location):
-    print("fhjffj")
     session.combine_title(cb_query, location)
     term_name = [b["text"] for b in Keyboards.get_keyboard("terms_kb", lang) if b["callback_data"] == term][0]
     try:
