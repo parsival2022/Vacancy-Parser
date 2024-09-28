@@ -124,10 +124,12 @@ PYTHON_KWD = CLUSTERS[PYTHON]["keywords"]["dj_kw"]
 JAVA_KWD = CLUSTERS[JAVA]["keywords"]["dj_kw"]
 JS_KWD = CLUSTERS[JS]["keywords"]["dj_kw"]
 CPP_KWD = CLUSTERS[CPP]["keywords"]["dj_kw"]
+PHP_KWD = CLUSTERS[PHP]["keywords"]["dj_kw"]
+GO_KWD = CLUSTERS[GO]["keywords"]["dj_kw"]
 
 DJ_BASE_VACANCY = "base_vacancy"
 
 DJ_MODELS = {DJ_BASE_VACANCY: DjinniBasicVacancy}
 DJ_COLLECTION = "Vacancies"
-DJ_KEYWORDS = (PYTHON_KWD, JAVA_KWD, JS_KWD, CPP_KWD)
+DJ_KEYWORDS = (PYTHON_KWD, JAVA_KWD, JS_KWD, CPP_KWD, PHP_KWD, GO_KWD)
                 
