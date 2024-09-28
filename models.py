@@ -66,9 +66,9 @@ class BasicVacancyModel(BaseModel):
             if not v["name"] in self.clusters:
                 if re.search(rf"\b{v['name'].lower()}\b", self.title):
                     self.clusters.append(v["name"])
-                if re.search(rf"\b{_(v['name'])}\b", self.description.lower()):
+                elif re.search(rf"\b{_(v['name'])}\b", self.description.lower()):
                     self.clusters.append(v["name"])
-                if any(tech in v["technologies"] for tech in self.technologies):
+                elif any(tech in v["technologies"] for tech in self.technologies):
                     self.clusters.append(v["name"])
         return self
     
