@@ -10,7 +10,7 @@ class Messages:
     ua_choose_cluster = "Будь ласка оберіть кластер, для якого ви хотіли б отримати статистику. Майте на увазі, що статистика буде показана тільки для цього кластера."
     eng_choose_terms = "Please choose the period of time for which you want to get statistics for."
     ua_choose_terms = "Будь ласка оберіть період часу, за який ви хочете отримати статистику."
-    eng_no_data = "No data has been found for your request. Probably, still parsing! Call it later."
+    eng_no_data = "No data has been found for your request. Try to use wider period range, another option or try it later."
     ua_no_data = "Для обрахування вашого запиту недостатньо даних. Мабуть, досі збираються! Спробуйте пізніше."
     eng_choose_terms_all_cl = eng_choose_terms + " " + "Remember, that statistic will be shown for all clusters."
     ua_choose_terms_all_cl = ua_choose_terms + " " + "Майте на увазі, що статистика буде показана для всіх кластерів."
