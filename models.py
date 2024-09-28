@@ -89,3 +89,7 @@ class BasicVacancyModel(BaseModel):
     @field_validator('title')
     def validate_title(cls, title):
         return cls.normalize_str(title)
+    
+    @field_validator('workplace_type')
+    def validate_workplace_type(cls, wrkplace:str):
+        return wrkplace.replace("Full", "").strip()
