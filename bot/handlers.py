@@ -50,7 +50,7 @@ async def ReturnOptionsKb(bot, cb_query, lang, session, cluster, term, location)
     term_name = [b["text"] for b in Keyboards.get_keyboard("terms_kb", lang) if b["callback_data"] == term][0]
     try:
         cluster_name = [b["text"] for b in Keyboards.clusters_kb if b["callback_data"] == cluster][0]
-        msg_args = [cluster_name, term_name]
+        msg_args = [term_name, cluster_name]
     except IndexError:
         msg_args = [term_name]
     msg, kb = get_msg_and_kb("choose_option_add", "stats_options_kb", lang, compile=[cluster, term, location], msg_args=msg_args,)
