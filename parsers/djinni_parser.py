@@ -71,11 +71,12 @@ class DjinniParser(Parser):
                 try:
                     self.wait((5, 10))
                     j_soup = self.parse_page()
-                    jobs = j_soup.find("main").find_all("ul")[0].find_all("li", {"class": "mb-5"})
+                    jobs = j_soup.find("main").find_all("ul")[0].find_all("li", {"class": "mb-4"})
                     for job in jobs:
                         data = {"keyword": keyword, "source": self.source_name}
                         data.update(self.extract_job_details(job))
-                        if not self.db_manager.check_if_exist({"url": data["url"]}):
+                        check = self.db_manager.check_if_exist({"url": data["url"]})
+                        if not check:
                             self.db_manager.create_one(data, DJ_BASE_VACANCY)
                     self.wait((5, 10))
                     try:
