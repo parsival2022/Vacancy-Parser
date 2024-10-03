@@ -88,23 +88,12 @@ class Parser:
         if not "://" in url:
             url = self.prefixes[mode] + url
         return url
-    
-    def remove_double_urls(self):
-        data = []
-        for url in self.urls:
-            if not url in data:
-                data.append(url)
-        self.urls = data
-    
-    def urls_normalisation(self) -> None:
-        urls = [self.add_prefix(url) for url in self.urls]
-        self.urls = urls
 
-    def urls_normalisation_file(self, filepath:str, mode) -> None:
+    def normalize_urls(self, filepath:str, mode) -> None:
         with open(filepath, 'r') as file:
             urls = json.load(file)
-        checked_urls = [self.add_prefix(url, mode) for url in urls]
-        self.write_to_file(f'normalised_{self.source_name}_data.json', checked_urls)
+        checked_urls = list(set(self.add_prefix(url, mode) for url in urls))
+        self.write_to_file(f'normalised_{self.source_name}_urls.json', checked_urls)
     
     def combine_cookies(self):
         cookies = '; '.join(['%s=%s'%(key,value) for key,value in self.session.cookies.get_dict().items()]) 
