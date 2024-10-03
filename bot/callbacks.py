@@ -29,6 +29,8 @@ class Callbacks:
     F_JAVA_CLUSTER_CB = f"{JAVA}_cl"
     F_JS_CLUSTER_CB = f"{JS}_cl"
     F_CPP_CLUSTER_CB = f"{CPP}_cl"
+    F_PHP_CLUSTER_CB = f"{PHP}_cl"
+    F_GO_CLUSTER_CB = f"{GO}_cl"
 
     TERM_10D_CB = "10"
     TERM_20D_CB = "20"
@@ -49,7 +51,9 @@ class Callbacks:
                 F_PYTHON_CLUSTER_CB,
                 F_JAVA_CLUSTER_CB,
                 F_JS_CLUSTER_CB,
-                F_CPP_CLUSTER_CB)
+                F_CPP_CLUSTER_CB,
+                F_PHP_CLUSTER_CB,
+                F_GO_CLUSTER_CB)
     
     OPTIONS = (CH_TECHS_CB, 
                CH_LEVELS_CB, 

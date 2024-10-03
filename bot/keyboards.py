@@ -36,6 +36,8 @@ class Keyboards:
         btn("Java", Callbacks.F_JAVA_CLUSTER_CB),
         btn("Java Script", Callbacks.F_JS_CLUSTER_CB),
         btn("C++", Callbacks.F_CPP_CLUSTER_CB),
+        btn("PHP", Callbacks.F_PHP_CLUSTER_CB),
+        btn("Golang", Callbacks.F_GO_CLUSTER_CB),
         back_to_main_btn
     ]
     terms_kb = [
