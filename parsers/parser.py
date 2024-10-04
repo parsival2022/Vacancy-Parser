@@ -42,11 +42,9 @@ class Parser:
         self.username = os.environ.get(self.source_name.upper().replace(" ", "_") + "_USERNAME") or None
         self.password = os.environ.get(self.source_name.upper().replace(" ", "_") + "_PASSWORD") or None
         self.proxies = proxies
-        self.use_driver = use_driver
-        self.use_request = use_request
-        if self.use_request:
+        if use_request:
             self.session = requests.Session()
-        if self.use_driver:
+        if use_driver:
             self.driver:webdriver.Chrome = self.create_driver()
 
     @repeat_if_fail(requests.exceptions.ChunkedEncodingError, 6)
