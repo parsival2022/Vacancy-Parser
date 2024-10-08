@@ -91,7 +91,6 @@ class StatisticManager:
         return data
     
     def generate_pie_chart(self, stats):
-        print(stats)
         filenames = []
         for k, v in stats.items():
             title = v.pop("graph_title")
@@ -183,7 +182,7 @@ class StatisticManager:
         ax.set_xticklabels(keys, rotation=45, ha="right")
         ax.legend()
         plt.tight_layout(pad=3)
-        filename = f"{title}_{tmp}_barchart.png"
+        filename = f"{tmp}_barchart.png"
         plt.savefig(f"charts/{filename}", bbox_inches='tight')
         filenames.append(filename)
         return filenames, stats
@@ -212,7 +211,6 @@ class StatisticManager:
                     cluster_res[(key.title() if key else "Total")] = key_res
                 loc_res[cl_name] = cluster_res
             top_res[location] = loc_res
-        print(top_res)
         filenames, stats = self.generate_comparative_bar_chart(top_res, title, **kwargs)
         return filenames, stats
 

@@ -81,8 +81,11 @@ async def ReturnGraphHandler(bot, st_manager, cb_query, lang, session, cluster, 
     await bot.delete_message(chat_id=cb_query.from_user.id, 
                              message_id=cb_query.message.message_id,)
     charts = [FSInputFile(f"charts/{filename}") for filename in filenames]
+    text_version = create_text_version(stats)
     await bot.send_media_group(chat_id=cb_query.from_user.id,
                                 media=[InputMediaPhoto(media=chart) for chart in charts])
+    await bot.send_message(chat_id=cb_query.from_user.id,
+                           text=text_version)
     msg, kb = get_msg_and_kb("start_cmd", "main_menu_kb", lang)
     await bot.send_message(chat_id=cb_query.from_user.id,
                            text=msg, 
@@ -217,10 +220,13 @@ async def ReturnComparGraphHandler(bot, cb_query, lang, session, s_m):
                            reply_markup=create_markup(kb, 1))
         return
     charts = [FSInputFile(f"charts/{filename}") for filename in filenames]
+    text_version = create_text_version(stats)
     await bot.delete_message(chat_id=cb_query.from_user.id, 
                              message_id=cb_query.message.message_id,)
     await bot.send_media_group(chat_id=cb_query.from_user.id,
                                 media=[InputMediaPhoto(media=chart) for chart in charts])
+    await bot.send_message(chat_id=cb_query.from_user.id,
+                           text=text_version)
     msg, kb = get_msg_and_kb("start_cmd", "main_menu_kb",  lang)
     await bot.send_message(chat_id=cb_query.from_user.id,
                            text=msg, 

@@ -37,3 +37,13 @@ def get_msg_and_kb(msg_name, kb_name, lang, compile=[], msg_args=[], kb_add=[], 
     if compile:
         compile_callbacks(kb, *compile)
     return msg, kb
+
+def create_text_version(stats, indent=0):
+    result = ""
+    indents = "   " * indent
+    for k, v in stats.items():
+        if isinstance(v, dict):
+            result += f"{indents}<b>{k.title()}</b>:\n{create_text_version(v, indent + 1)}"
+        else:
+            result += f"{indents}<b>{k.title()}</b>: {v}\n"
+    return result
