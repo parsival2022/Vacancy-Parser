@@ -68,23 +68,25 @@ async def ReturnGraphHandler(bot, st_manager, cb_query, lang, session, cluster, 
                                     reply_markup=None)
     cl_key, term, location, key = prepare_args(cluster, term, location, option)
     filenames, stats = st_manager.get_stats_chart(key, term, location, title_data, cl_key=cl_key, chart=chart)
-    if not filenames:
+    print(filenames, stats)
+    if not filenames and not stats:
         msg = Messages.get_msg("no_data", lang)
         await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                     message_id=cb_query.message.message_id, 
                                     reply_markup=None)
-        msg, kb = get_msg_and_kb("start_cmd", "main_menu_kb",  lang)
-        await bot.send_message(chat_id=cb_query.from_user.id,
-                           text=msg, 
-                           reply_markup=create_markup(kb, 1))
-        return
-    await bot.delete_message(chat_id=cb_query.from_user.id, 
-                             message_id=cb_query.message.message_id,)
-    charts = [FSInputFile(f"charts/{filename}") for filename in filenames]
-    text_version = create_text_version(stats)
-    await bot.send_media_group(chat_id=cb_query.from_user.id,
+    if not filenames and stats:
+        msg = create_text_version(stats)
+        await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
+                                    message_id=cb_query.message.message_id, 
+                                    reply_markup=None)
+    else:
+        await bot.delete_message(chat_id=cb_query.from_user.id, 
+                                message_id=cb_query.message.message_id,)
+        charts = [FSInputFile(f"charts/{filename}") for filename in filenames]
+        text_version = create_text_version(stats)
+        await bot.send_media_group(chat_id=cb_query.from_user.id,
                                 media=[InputMediaPhoto(media=chart) for chart in charts])
-    await bot.send_message(chat_id=cb_query.from_user.id,
+        await bot.send_message(chat_id=cb_query.from_user.id,
                            text=text_version)
     msg, kb = get_msg_and_kb("start_cmd", "main_menu_kb", lang)
     await bot.send_message(chat_id=cb_query.from_user.id,

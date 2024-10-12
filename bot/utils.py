@@ -40,10 +40,22 @@ def get_msg_and_kb(msg_name, kb_name, lang, compile=[], msg_args=[], kb_add=[], 
 
 def create_text_version(stats, indent=0):
     result = ""
+    try:
+        title = stats.pop("title")
+        result = f"<b><i>{title}:</i></b>\n"
+        indent += 1
+    except (KeyError, AttributeError):
+        pass
     indents = "   " * indent
     for k, v in stats.items():
-        if isinstance(v, dict):
-            result += f"{indents}<b>{k.title()}</b>:\n{create_text_version(v, indent + 1)}"
+        try:
+            k = v.pop("title")
+        except (KeyError, AttributeError):
+            pass
+        if isinstance(v, dict) and not v.get("None"):
+            result += f"{indents}<b><i>{k[0].upper() + k[1:]}:</i></b>\n{create_text_version(v, indent + 1)}"
+        elif isinstance(v, dict) and v.get("None"):
+            result += f"{indents}<b>{k[0].upper() + k[1:]}:</b> {v.get('None')}\n"
         else:
-            result += f"{indents}<b>{k.title()}</b>: {v}\n"
+            result += f"{indents}<b>{k.title()}:</b> {v}\n"
     return result

@@ -121,6 +121,7 @@ class StatisticManager:
             plt.savefig(f"charts/{filename}", bbox_inches='tight')
             plt.clf() 
             filenames.append(filename)
+            v["title"] = title
         return filenames, stats
     
     def generate_bar_chart(self, stats, x_label="Vacancies", y_label="Values"): 
@@ -185,6 +186,7 @@ class StatisticManager:
         filename = f"{tmp}_barchart.png"
         plt.savefig(f"charts/{filename}", bbox_inches='tight')
         filenames.append(filename)
+        stats["title"] = title
         return filenames, stats
     
     def get_stats_chart(self, key, term, location, title, cl_key=None, chart="bar", **kwargs) -> tuple[list[str], dict]:
@@ -192,6 +194,8 @@ class StatisticManager:
             stat = self.get_stats_for_clusters(key, title=title, term=term, location=location)
         else:
             stat = self.get_stats_for_cluster(cl_key, key, title=title, term=term, location=location)
+        if not key:
+            return None, stat
         filenames, stat = self.generate_pie_chart(stat, **kwargs) if chart == "pie" else self.generate_bar_chart(stat, **kwargs)
         return filenames, stat
     
