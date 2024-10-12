@@ -68,13 +68,12 @@ async def ReturnGraphHandler(bot, st_manager, cb_query, lang, session, cluster, 
                                     reply_markup=None)
     cl_key, term, location, key = prepare_args(cluster, term, location, option)
     filenames, stats = st_manager.get_stats_chart(key, term, location, title_data, cl_key=cl_key, chart=chart)
-    print(filenames, stats)
-    if not filenames and not stats:
+    if not filenames and not [v for v in stats.values() if v]:
         msg = Messages.get_msg("no_data", lang)
         await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                     message_id=cb_query.message.message_id, 
                                     reply_markup=None)
-    if not filenames and stats:
+    elif not filenames and stats:
         msg = create_text_version(stats)
         await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                     message_id=cb_query.message.message_id, 
