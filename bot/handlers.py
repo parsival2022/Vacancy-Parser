@@ -178,7 +178,7 @@ async def HandleComparClustersMenu(bot, cb_query, lang, session, cluster):
 async def HandleComparOptionsMenu(bot, cb_query, lang, session, opt):
     query = session.get_query()
     options = query.get("options")
-    option = Callbacks.MAPPING.get(opt) or None
+    option = Callbacks.MAPPING.get(opt)
     if options and option in options:
         msg, kb = get_msg_and_kb("compar_already_chosen_opt", "compar_option_or_graph_kb", lang, compile=[Callbacks.COMPARATIVE_CB])
         await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
@@ -189,12 +189,12 @@ async def HandleComparOptionsMenu(bot, cb_query, lang, session, opt):
         session.add_to_query("options", [option])
     elif options and not option in options:
         session.push_to_query("options", option)
-    if opt == Callbacks.CH_COUNT_CB:
-        f_f = lambda btn: btn["callback_data"] != Callbacks.CHOOSE_OPTION_CB
-        msg, kb = get_msg_and_kb("count_option", "compar_option_or_graph_kb", lang, compile=[Callbacks.COMPARATIVE_CB], filter_func=f_f)
-    else:
-        opt_name = [b["text"] for b in Keyboards.get_keyboard("stats_options_kb", lang) if b["callback_data"] == opt][0]
-        msg, kb = get_msg_and_kb("option_saved", "compar_option_or_graph_kb", lang, compile=[Callbacks.COMPARATIVE_CB], msg_args=[opt_name])
+    # if opt == Callbacks.CH_COUNT_CB:
+    #     f_f = lambda btn: btn["callback_data"] != Callbacks.CHOOSE_OPTION_CB
+    #     msg, kb = get_msg_and_kb("count_option", "compar_option_or_graph_kb", lang, compile=[Callbacks.COMPARATIVE_CB], filter_func=f_f)
+    
+    opt_name = [b["text"] for b in Keyboards.get_keyboard("stats_options_kb", lang) if b["callback_data"] == opt][0]
+    msg, kb = get_msg_and_kb("option_saved", "compar_option_or_graph_kb", lang, compile=[Callbacks.COMPARATIVE_CB], msg_args=[opt_name])
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                     message_id=cb_query.message.message_id, 
                                     reply_markup=create_markup(kb, 1))

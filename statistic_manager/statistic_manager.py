@@ -69,7 +69,7 @@ class StatisticManager:
         cl_title = self.clusters[cluster_key]["name"]
         pipeline = self.build_pipeline(cluster_key, key, term, location)
         res = self.db_manager.aggregate(pipeline) 
-        for m_r in [{(r["_id"] if r["_id"] else "total"): r["count"]} for r in res if r["_id"] != NOT_DEFINED]:
+        for m_r in [{(r["_id"] if r["_id"] else "total_count"): r["count"]} for r in res if r["_id"] != NOT_DEFINED]:
             data.update(m_r)
         if key == "technologies":
             normalized_data, other_techs = self.normalize_technologies(data, cl_title)
@@ -141,53 +141,59 @@ class StatisticManager:
             plt.savefig(f"charts/{filename}", bbox_inches='tight')
             filenames.append(filename)
         return filenames
- 
-    def generate_comparative_bar_chart(self, stats:dict, title): 
+
+    def generate_comparative_bar_chart(self, stats: dict, title: str):
         filenames = []
-        location_keys = []
-        cluster_keys = []
-        values_to_draw = []
-        data = []
         tmp = datetime.now().timestamp()
-        for loc_key, loc_obj in stats.items():
-            location_keys.append(loc_key)
-            for cl_key, cl_obj in loc_obj.items():
-                cluster_keys.append(cl_key)
-                for lvl_key, lvl_obj in cl_obj.items():
-                    values_to_draw.append(lvl_obj)
-        if all(not el for el in values_to_draw):
-            return None, None
-        keys_to_compare = location_keys if len(location_keys) > 1 else cluster_keys
-        keys = list(set(key for v in values_to_draw for key in v.keys()))
-        for i, comp_key in enumerate(keys_to_compare):
-            obj = values_to_draw[i]
-            res = {}
-            for key in keys:
-                v = obj.get(key) or 0
-                res[key] = v
-            data.append(res)
-        x = np.arange(len(keys))
-        fig, ax = plt.subplots(figsize=(10, 8))
-        num_bars = len(data)
-        width = 0.8 / num_bars
-        offset = np.linspace(-0.4, 0.4, num_bars, endpoint=False)
-        for i, item in enumerate(data):
-            label = keys_to_compare[i]
-            values = item.values()
-            _x = x + offset[i] 
-            ax.bar(_x, values, width, label=label)
-        ax.set_title(title, pad=20)
-        ax.set_xticks(x + offset.mean())
-        if len(keys) == 1:
-            keys = ["Quantity" for key in keys if key == "None"]
-        ax.set_xticklabels(keys, rotation=45, ha="right")
-        ax.legend()
-        plt.tight_layout(pad=3)
-        filename = f"{tmp}_barchart.png"
-        plt.savefig(f"charts/{filename}", bbox_inches='tight')
-        filenames.append(filename)
+        comparison_keys = set(key for loc_obj in stats.values() for cl_obj in loc_obj.values() for key in cl_obj.keys())
+        for comparison_key in comparison_keys:
+            location_keys = []
+            cluster_keys = []
+            values_to_draw = []
+            for loc_key, loc_obj in stats.items():
+                location_keys.append(loc_key)
+                for cl_key, cl_obj in loc_obj.items():
+                    cluster_keys.append(cl_key)
+                    values = cl_obj.get(comparison_key, {})
+                    values_to_draw.append(values)
+            if all(not v for v in values_to_draw):
+                continue
+            keys_to_compare = location_keys if len(location_keys) > 1 else cluster_keys
+            comparison_subkeys = list(set(subkey for v in values_to_draw for subkey in v.keys()))
+            data = []
+            for i, comp_key in enumerate(keys_to_compare):
+                obj = values_to_draw[i]
+                res = {}
+                for key in comparison_subkeys:
+                    res[key] = obj.get(key, 0) 
+                data.append(res)
+            try:
+                i = comparison_subkeys.index('None')
+                comparison_subkeys[i] = 'Count'
+            except ValueError:
+                pass
+            x = np.arange(len(comparison_subkeys))
+            fig, ax = plt.subplots(figsize=(10, 8))
+            num_bars = len(data)
+            width = 0.8 / num_bars
+            offset = np.linspace(-0.4, 0.4, num_bars, endpoint=False)
+            for i, item in enumerate(data):
+                label = keys_to_compare[i]
+                values = item.values()
+                _x = x + offset[i]
+                ax.bar(_x, values, width, label=label)
+            ax.set_title(f"{title}: {comparison_key.replace('_', ' ')}", pad=20)
+            ax.set_xticks(x + offset.mean())
+            ax.set_xticklabels(comparison_subkeys, rotation=45, ha="right")
+            ax.legend()
+            plt.tight_layout(pad=3)
+            filename = f"{tmp}_barchart_{comparison_key}.png"
+            plt.savefig(f"charts/{filename}", bbox_inches='tight')
+            filenames.append(filename)
+
         stats["title"] = title
         return filenames, stats
+
     
     def get_stats_chart(self, key, term, location, title, cl_key=None, chart="bar", **kwargs) -> tuple[list[str], dict]:
         if not cl_key:
