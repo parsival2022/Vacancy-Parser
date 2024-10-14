@@ -51,10 +51,8 @@ class StatisticManager:
             pipeline.extend(self.pipeline_query_term(time))
         if location:
             pipeline.extend(self.pipeline_query_location(location))
-        if key:
+        if key and count:
             pipeline.extend(self.pipeline_query_for_key(key))
-        if count: 
-            pipeline.extend(self.pipeline_query_for_count)
         return pipeline
     
     def get_vacancies(self, query, limit=10):
@@ -79,6 +77,7 @@ class StatisticManager:
         cl_title = self.clusters[cluster_key]["name"]
         pipeline = self.build_pipeline(cluster_key, key, term, location)
         res = self.db_manager.aggregate(pipeline) 
+        print(pipeline)
         for m_r in [{(r["_id"] if r["_id"] else "total_count"): r["count"]} for r in res if r["_id"] != NOT_DEFINED]:
             data.update(m_r)
         if key == "technologies":
@@ -101,6 +100,7 @@ class StatisticManager:
         return data
     
     def generate_pie_chart(self, stats):
+        print(stats)
         filenames = []
         for k, v in stats.items():
             title = v.pop("graph_title")
