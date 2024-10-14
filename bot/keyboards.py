@@ -15,6 +15,7 @@ class Keyboards:
         btn("Get statistic for cluster", Callbacks.CHOOSE_CLUSTER_CB),
         btn("Get statistic for all clusters", Callbacks.F_ALL_CLUSTERS_CB),
         btn("Get comparative statistic", Callbacks.CHOOSE_COMPARATIVE_CB),
+        btn("Find vacancies", Callbacks.CHOOSE_FIND_VACANCIES),
         btn("Change language", Callbacks.CHOOSE_LANG_CB)
     ]
     choose_lang_kb = [
@@ -54,6 +55,12 @@ class Keyboards:
         btn(EU, Callbacks.LOC_EU_CB),
         btn(UK, Callbacks.LOC_UK_CB),
         btn(USA, Callbacks.LOC_USA_CB),
+        back_to_main_btn
+    ]
+    levels_kb = [
+        btn("Junior", Callbacks.LVL_JUN_CB),
+        btn("Middle", Callbacks.LVL_MIDDLE_CB),
+        btn("Senior", Callbacks.LVL_SENIOR_CB),
         back_to_main_btn
     ]
     compar_loc_or_cluster_kb = [
@@ -102,7 +109,8 @@ class Keyboards:
             "Choose another cluster": "Обрати ще один кластер",
             "Choose option": "Обрати поле",
             "Choose other option": "Обрати інше поле",
-            "Count vacancies": "Підрахувати вакансії"
+            "Count vacancies": "Підрахувати вакансії",
+            "Find vacancies": "Знайти вакансії"
         }
     }
 

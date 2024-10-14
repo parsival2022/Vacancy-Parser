@@ -15,6 +15,9 @@ class StatisticManager:
                                                             "clusters": self.clusters[cluster_key]["name"]}
                                                         },
                                                         {"$match": {"completed": True}}]
+    pipeline_query_level = lambda self, level: [{"$match": {
+                                                            "level": level}
+                                                        }]
     pipeline_query_term = lambda self, time: [{"$addFields": {
                                                 "extr_date_converted": {
                                                     "$dateFromString": {
@@ -29,31 +32,38 @@ class StatisticManager:
                                                     "count": { "$sum": 1 }
                                                 }},  
                                                 {"$sort": { "count": -1 }}]
-    pipeline_query_for_count = {"$group": {
+    pipeline_query_for_count = [{"$group": {
                                     "_id": None,  
                                     "count": {"$sum": 1}}
-                                }
-    pipeline_query_location = lambda self, location: {"$match": {"location": location}}
+                                }]
+    pipeline_query_location = lambda self, location: [{"$match": {"location": location}}]
 
     def __init__(self, db_manager) -> None:
         self.db_manager:MongoManager = db_manager
         if not os.path.exists(self.chart_name):
             os.makedirs(self.chart_name)
 
-    def build_pipeline(self, cluster_key, key, term, location):
+    def build_pipeline(self, cluster_key, key, term, location, count=True):
         pipeline = []
         pipeline.extend(self.pipeline_query_opening(cluster_key))
         if term:
             time = datetime.now() - timedelta(days=term)
             pipeline.extend(self.pipeline_query_term(time))
         if location:
-            pipeline.append(self.pipeline_query_location(location))
+            pipeline.extend(self.pipeline_query_location(location))
         if key:
             pipeline.extend(self.pipeline_query_for_key(key))
-        else: 
-            pipeline.append(self.pipeline_query_for_count)
+        if count: 
+            pipeline.extend(self.pipeline_query_for_count)
         return pipeline
-        
+    
+    def get_vacancies(self, query, limit=10):
+        cluster, location, term, level = query["clusters"], query["location"], query["term"], query['level']
+        pipeline = self.build_pipeline(cluster, None, term, location,  count=False)
+        pipeline.extend(self.pipeline_query_level(level))
+        res = self.db_manager.aggregate(pipeline)
+        return res[:limit]
+
     def normalize_skills(self, skills, limit=10):
         filtered_skills = {key: value for key, value in skills.items() if value >= limit}
         return filtered_skills

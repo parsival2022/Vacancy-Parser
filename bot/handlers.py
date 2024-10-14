@@ -22,7 +22,6 @@ async def ReturnLangsKb(bot, cb_query, lang):
     
 async def ReturnClustersKb(bot, cb_query, lang):
     msg, kb = get_msg_and_kb("choose_cluster", "clusters_kb",  lang)
-    print(kb)
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                 message_id=cb_query.message.message_id, 
                                 reply_markup=create_markup(kb, 1))
@@ -111,12 +110,14 @@ async def ReturnComparLocationsMenu(bot, cb_query, lang, session, term):
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                 message_id=cb_query.message.message_id, 
                                 reply_markup=create_markup(kb, 1))
+    
                                 
 async def ReturnComparClustersMenu(bot, cb_query, lang):
     msg, kb = get_msg_and_kb("choose_compar_cluster", "clusters_kb", lang, compile=[Callbacks.COMPARATIVE_CB])
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                 message_id=cb_query.message.message_id, 
                                 reply_markup=create_markup(kb, 1))
+    
 
 async def ReturnComparOptionsMenu(bot, cb_query, lang, session:Session):
     query = session.get_query()
@@ -189,10 +190,6 @@ async def HandleComparOptionsMenu(bot, cb_query, lang, session, opt):
         session.add_to_query("options", [option])
     elif options and not option in options:
         session.push_to_query("options", option)
-    # if opt == Callbacks.CH_COUNT_CB:
-    #     f_f = lambda btn: btn["callback_data"] != Callbacks.CHOOSE_OPTION_CB
-    #     msg, kb = get_msg_and_kb("count_option", "compar_option_or_graph_kb", lang, compile=[Callbacks.COMPARATIVE_CB], filter_func=f_f)
-    
     opt_name = [b["text"] for b in Keyboards.get_keyboard("stats_options_kb", lang) if b["callback_data"] == opt][0]
     msg, kb = get_msg_and_kb("option_saved", "compar_option_or_graph_kb", lang, compile=[Callbacks.COMPARATIVE_CB], msg_args=[opt_name])
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
@@ -233,4 +230,68 @@ async def ReturnComparGraphHandler(bot, cb_query, lang, session, s_m):
                            text=msg, 
                            reply_markup=create_markup(kb, 1))
     clear_charts(filenames)
+
+async def ReturnFindVacanciesTermsMenu(bot, cb_query, lang, session):
+    session.start_query()
+    msg, kb = get_msg_and_kb("choose_terms_fv", "terms_kb", lang, compile=[Callbacks.FIND_VAC_CB])
+    await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
+                                        message_id=cb_query.message.message_id, 
+                                        reply_markup=create_markup(kb, 1))
+    
+async def ReturnFindVacanciesLocationsMenu(bot, cb_query, lang, session, term):
+    try:
+        term = int(term)
+        session.add_to_query("term", term)
+    except ValueError:
+        pass
+    msg, kb = get_msg_and_kb("choose_location_fv", "locations_kb", lang, compile=[Callbacks.FIND_VAC_CB])
+    await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
+                                message_id=cb_query.message.message_id, 
+                                reply_markup=create_markup(kb, 1))
+    
+async def ReturnFindVacanciesClustersMenu(bot, cb_query, lang, session, location):
+    loc_name = Callbacks.MAPPING.get(location)
+    session.add_to_query("location", loc_name)
+    msg, kb = get_msg_and_kb("choose_cluster_fv", "clusters_kb", lang, compile=[Callbacks.FIND_VAC_CB])
+    await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
+                                message_id=cb_query.message.message_id, 
+                                reply_markup=create_markup(kb, 1))
+    
+async def ReturnFindVacanciesLevelMenu(bot, cb_query, lang, session, cluster):
+    session.add_to_query("clusters", cluster.replace("_cl", ""))
+    msg, kb = get_msg_and_kb("choose_level_fv", "levels_kb", lang, compile=[Callbacks.FIND_VAC_CB])
+    await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
+                                message_id=cb_query.message.message_id, 
+                                reply_markup=create_markup(kb, 1))  
+    
+async def ReturnFindVacanciesResult(bot, cb_query, lang, session, level, s_m):
+    btn = lambda obj: {"text": obj["title"], "url": obj["url"]}
+    level_name = Callbacks.MAPPING.get(level)
+    session.add_to_query("level", level_name)
+    session.refresh()
+    query = session.get_query()
+    result = s_m.get_vacancies(query)
+    if not result:
+        msg = Messages.get_msg("no_data", lang)
+        await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
+                                    message_id=cb_query.message.message_id, 
+                                    reply_markup=None)
+        msg, kb = get_msg_and_kb("start_cmd", "main_menu_kb",  lang)
+        await bot.send_message(chat_id=cb_query.from_user.id,
+                           text=msg, 
+                           reply_markup=create_markup(kb, 1))
+        return
+    kb = []
+    for res in result:
+        kb.append(btn(res))
+    msg = Messages.get_msg("result_fv", lang)
+    print(kb)
+    await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
+                                message_id=cb_query.message.message_id, 
+                                reply_markup=create_markup(kb, 1))
+    msg, kb = get_msg_and_kb("start_cmd", "main_menu_kb", lang)
+    await bot.send_message(chat_id=cb_query.from_user.id,
+                           text=msg, 
+                           reply_markup=create_markup(kb, 1))
+    session.clear()
 

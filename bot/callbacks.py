@@ -13,8 +13,11 @@ class Callbacks:
     CHOOSE_OTHER_TERM = "ch_othtrm"
     CHOOSE_OPTION_CB = "ch_optns"
     CHOOSE_LOCATION_CB = "ch_lctn"
+    CHOOSE_FIND_VACANCIES = "f_vcns"
     COMPARATIVE_CB = "cmpr"
+    FIND_VAC_CB = "fvc"
     GET_STATS_CB = "gt_ststc"
+    
 
     LNG_UA_CB = "ua"
     LNG_ENG_CB = "eng"
@@ -23,6 +26,10 @@ class Callbacks:
     LOC_USA_CB = "usa_loc"
     LOC_EU_CB = "eu_loc"
     LOC_UK_CB = "uk_loc"
+
+    LVL_JUN_CB = "jun_lvl"
+    LVL_SENIOR_CB = "snr_lvl"
+    LVL_MIDDLE_CB = "md_lvl"
 
     F_ALL_CLUSTERS_CB = "all_cl"
     F_PYTHON_CLUSTER_CB = f"{PYTHON}_cl"
@@ -78,6 +85,10 @@ class Callbacks:
                  LOC_UK_CB,
                  LOC_USA_CB)
     
+    LEVELS = (LVL_JUN_CB,
+              LVL_MIDDLE_CB,
+              LVL_SENIOR_CB)
+    
     MAPPING = {
         CH_TECHS_CB: "technologies",
         CH_LEVELS_CB: "level",
@@ -88,5 +99,8 @@ class Callbacks:
         LOC_UA_CB: UA,
         LOC_UK_CB: UK,
         LOC_USA_CB: USA,
-        LOC_EU_CB: EU
+        LOC_EU_CB: EU,
+        LVL_JUN_CB: "Junior",
+        LVL_MIDDLE_CB: "Middle",
+        LVL_SENIOR_CB: "Senior"
     }

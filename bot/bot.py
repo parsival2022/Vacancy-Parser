@@ -57,8 +57,20 @@ async def CallbacksHandler(callback_query:CallbackQuery) -> None:
             await ToMainMenuHandler(bot, callback_query, current_session, lang)
         case options if len(options) == 1 and options[0] == Callbacks.CHOOSE_LANG_CB:
             await ReturnLangsKb(bot, callback_query, lang)
-        case options if len(options) == 1 and options[0] == Callbacks.CHOOSE_COMPARATIVE_CB:
-            await ReturnComparTermsMenu(bot, callback_query, lang, current_session)
+        case options if len(options) == 1 and options[0] == Callbacks.CHOOSE_FIND_VACANCIES:
+            await ReturnFindVacanciesTermsMenu(bot, callback_query, lang, current_session)
+        case options if len(options) == 2 and (options[0] == Callbacks.FIND_VAC_CB 
+                                               and options[1] in Callbacks.TERMS):
+            await ReturnFindVacanciesLocationsMenu(bot, callback_query, lang, current_session, options[1])
+        case options if len(options) == 2 and (options[0] == Callbacks.FIND_VAC_CB 
+                                               and options[1] in Callbacks.LOCATIONS):
+            await ReturnFindVacanciesClustersMenu(bot, callback_query, lang, current_session, options[1])
+        case options if len(options) == 2 and (options[0] == Callbacks.FIND_VAC_CB 
+                                               and options[1] in Callbacks.CLUSTERS):
+            await ReturnFindVacanciesLevelMenu(bot, callback_query, lang, current_session, options[1])
+        case options if len(options) == 2 and (options[0] == Callbacks.FIND_VAC_CB 
+                                               and options[1] in Callbacks.LEVELS):
+            await ReturnFindVacanciesResult(bot, callback_query, lang, current_session, options[1], sm)
         case options if len(options) == 1 and options[0] == Callbacks.CHOOSE_CLUSTER_CB:
             await ReturnClustersKb(bot, callback_query, lang)
         case options if len(options) == 1 and options[0] in Callbacks.CLUSTERS:
@@ -66,6 +78,8 @@ async def CallbacksHandler(callback_query:CallbackQuery) -> None:
         case options if len(options) == 2 and (options[0] in Callbacks.CLUSTERS 
                                                and options[1] in Callbacks.TERMS):
             await ReturnLocationsKb(bot, callback_query, lang, current_session, *options)
+        case options if len(options) == 1 and options[0] == Callbacks.CHOOSE_COMPARATIVE_CB:
+            await ReturnComparTermsMenu(bot, callback_query, lang, current_session)
         case options if len(options) == 2 and (options[0] == Callbacks.COMPARATIVE_CB 
                                                and (options[1] in Callbacks.TERMS 
                                                     or options[1] == Callbacks.CHOOSE_LOCATION_CB)):
