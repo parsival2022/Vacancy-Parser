@@ -57,5 +57,5 @@ def create_text_version(stats, indent=0):
         elif isinstance(v, dict) and v.get("None"):
             result += f"{indents}<b>{k[0].upper() + k[1:]}:</b> {v.get('None')}\n"
         else:
-            result += f"{indents}<b>{k.title()}:</b> {v}\n"
+            result += f"{indents}<b>{k.title()}:</b> {v if v else 'No data'}\n"
     return result

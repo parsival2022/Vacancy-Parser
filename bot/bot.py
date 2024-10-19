@@ -58,10 +58,7 @@ async def CallbacksHandler(callback_query:CallbackQuery) -> None:
         case options if len(options) == 1 and options[0] == Callbacks.CHOOSE_LANG_CB:
             await ReturnLangsKb(bot, callback_query, lang)
         case options if len(options) == 1 and options[0] == Callbacks.CHOOSE_FIND_VACANCIES:
-            await ReturnFindVacanciesTermsMenu(bot, callback_query, lang, current_session)
-        case options if len(options) == 2 and (options[0] == Callbacks.FIND_VAC_CB 
-                                               and options[1] in Callbacks.TERMS):
-            await ReturnFindVacanciesLocationsMenu(bot, callback_query, lang, current_session, options[1])
+            await ReturnFindVacanciesLocationsMenu(bot, callback_query, lang, current_session)
         case options if len(options) == 2 and (options[0] == Callbacks.FIND_VAC_CB 
                                                and options[1] in Callbacks.LOCATIONS):
             await ReturnFindVacanciesClustersMenu(bot, callback_query, lang, current_session, options[1])

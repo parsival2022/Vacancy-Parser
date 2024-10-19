@@ -230,20 +230,9 @@ async def ReturnComparGraphHandler(bot, cb_query, lang, session, s_m):
                            text=msg, 
                            reply_markup=create_markup(kb, 1))
     clear_charts(filenames)
-
-async def ReturnFindVacanciesTermsMenu(bot, cb_query, lang, session):
-    session.start_query()
-    msg, kb = get_msg_and_kb("choose_terms_fv", "terms_kb", lang, compile=[Callbacks.FIND_VAC_CB])
-    await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
-                                        message_id=cb_query.message.message_id, 
-                                        reply_markup=create_markup(kb, 1))
     
-async def ReturnFindVacanciesLocationsMenu(bot, cb_query, lang, session, term):
-    try:
-        term = int(term)
-        session.add_to_query("term", term)
-    except ValueError:
-        pass
+async def ReturnFindVacanciesLocationsMenu(bot, cb_query, lang, session):
+    session.start_query()
     msg, kb = get_msg_and_kb("choose_location_fv", "locations_kb", lang, compile=[Callbacks.FIND_VAC_CB])
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                 message_id=cb_query.message.message_id, 
@@ -285,7 +274,6 @@ async def ReturnFindVacanciesResult(bot, cb_query, lang, session, level, s_m):
     for res in result:
         kb.append(btn(res))
     msg = Messages.get_msg("result_fv", lang)
-    print(kb)
     await bot.edit_message_text(msg, chat_id=cb_query.from_user.id, 
                                 message_id=cb_query.message.message_id, 
                                 reply_markup=create_markup(kb, 1))
