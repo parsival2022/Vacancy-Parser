@@ -87,33 +87,37 @@ class LinkedinParser(Parser):
             self.wait((8, 10))
 
     @repeat_if_fail(WebDriverException, 7)
-    def perform_jobs_search(self, search_str, loc):
-        self.current_page = 1
-        self.insert_search_params(search_str, loc)
-        while self.current_page:
-            try:
-                self.wait(15)
-                raw_jobs = self.soup_two_level_extr_all('ul', {'class': "scaffold-layout__list-container"}, 'li', {})
-                for job in raw_jobs:
+    def perform_jobs_search(self):
+        for location in self.locations:
+            for keyword in self.keywords:
+                # self.wait((10, 15))
+                self.current_page = 1
+                self.insert_search_params(keyword, location)
+                while self.current_page:
                     try:
-                        j_id = job['data-occludable-job-id']
-                        j_url = f"{self.base_url}/jobs/view/{j_id}/"
-                        if not self.db_manager.check_if_exist({"url": j_url}):
-                            data = {"url": j_url, "location": loc, "keyword": search_str, "source":self.source_name}
-                            self.db_manager.create_one(data, LN_BASIC_VACANCY)
-                    except KeyError: continue
-                self.wait((4, 8))
-                try:
-                    self.click_on_element(*self.next_page_numbered())
-                    self.current_page += 1
-                except NoSuchElementException:
-                    self.click_on_element(*self.next_page_dots)
-                    self.current_page += 1
-            except (NoSuchElementException, ElementNotInteractableException):
-                self.current_page = None
+                        self.wait(15)
+                        raw_jobs = self.soup_two_level_extr_all('ul', {'class': "scaffold-layout__list-container"}, 'li', {})
+                        for job in raw_jobs:
+                            try:
+                                j_id = job['data-occludable-job-id']
+                                j_url = f"{self.base_url}/jobs/view/{j_id}/"
+                                if not self.db_manager.check_if_exist({"url": j_url}):
+                                    data = {"url": j_url, "location": location, "keyword": keyword, "source":self.source_name}
+                                    self.db_manager.create_one(data, LN_BASIC_VACANCY)
+                            except KeyError:
+                                continue
+                        self.wait((4, 8))
+                        try:
+                            self.click_on_element(*self.next_page_numbered())
+                            self.current_page += 1
+                        except NoSuchElementException:
+                            self.click_on_element(*self.next_page_dots)
+                            self.current_page += 1
+                    except (NoSuchElementException, ElementNotInteractableException):
+                        self.current_page = None
 
     @repeat_if_fail(NoSuchElementException, 5)
-    def extract_job_details(self):
+    def extract_job_details(self, *args):
         currency_signs = ['$', '€', '£', '¥', '₹', '₴']
         levels = ['Internship', 'Entry level', 'Associate', 'Mid-Senior', 'Director', 'Executive']
         workplaces = ['On-site', 'Hybrid', 'Remote']
@@ -143,7 +147,7 @@ class LinkedinParser(Parser):
         return data
     
     @execute_if_fail(ElementClickInterceptedException, lambda: {"skills": []})
-    def extract_job_skills(self):
+    def extract_job_skills(self, *args):
         data = {}
         skills = []
         self.click_on_element(*self.skills_btn)
@@ -157,46 +161,45 @@ class LinkedinParser(Parser):
         return data
 
     @repeat_if_fail(WebDriverException, 7)
-    def perform_job_parsing(self, search_str, loc):
-        urls:list[dict] = self.db_manager.get_many({"location": loc, "keyword": search_str, "completed": False})
-        if not urls: return
-        feed = self.driver.current_window_handle
+    def perform_jobs_parsing(self):
+        for keyword in self.keywords:
+            urls: list[dict] = self.db_manager.get_many({"keyword": keyword, "completed": False})
+            if not urls:
+                return
+            feed = self.driver.current_window_handle
 
-        for url in urls:
-            self.driver.switch_to.new_window('tab')
-            self.driver.get(url["url"])
-            self.wait(15)
-            try:
-                el = self.driver.find_element(By.ID, "jobs-feed-discovery-module-0")
+            for url in urls:
+                self.driver.switch_to.new_window('tab')
+                self.driver.get(url["url"])
+                self.wait(15)
+                try:
+                    el = self.driver.find_element(By.ID, "jobs-feed-discovery-module-0")
+                    self.driver.close()
+                    self.driver.switch_to.window(feed)
+                    return
+                except NoSuchElementException:
+                    pass
+                try:
+                    url.update(self.extract_job_info())
+                    url.update(self.extract_job_details())
+                    url.update(self.extract_job_skills())
+                except NoSuchElementException:
+                    pass
+                try:
+                    vacancy = self.db_manager.models[LN_VACANCY].model_validate(url)
+                    self.db_manager.update_one({"url": url["url"]}, {"$set": vacancy.model_dump()})
+                except ValidationError:
+                    pass
                 self.driver.close()
                 self.driver.switch_to.window(feed)
-                return
-            except NoSuchElementException:
-                pass
-            try:
-                url.update(self.extract_job_info())
-                url.update(self.extract_job_details())
-                url.update(self.extract_job_skills())
-            except NoSuchElementException:
-                pass 
-            try: 
-                vacancy = self.db_manager.models[LN_VACANCY].model_validate(url)
-                self.db_manager.update_one({"url": url["url"]}, {"$set": vacancy.model_dump()})
-            except ValidationError:
-                pass
-            self.driver.close()
-            self.driver.switch_to.window(feed)
-            self.click_on_element(*self.jobs_button)
-            self.wait((3, 6))
+                self.click_on_element(*self.jobs_button)
+                self.wait((3, 6))
             
     @repeat_if_fail((InvalidSessionIdException, SessionNotCreatedException), 60)
-    def parsing_suite(self, locations, keywords):           
+    def parsing_suite(self):
         self.perform_login()
-        for location in locations:
-            for keyword in keywords:
-                self.wait((10, 15))
-                self.perform_jobs_search(keyword, location)
-                self.perform_job_parsing(keyword, location)
+        self.perform_jobs_search()
+        self.perform_jobs_parsing()
         self.driver.quit()
 
 LN_VACANCY = "vacancy"

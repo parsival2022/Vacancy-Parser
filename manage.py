@@ -20,14 +20,14 @@ def cli():
 @cli.command()
 def launch_linkedin_parsing():
     db_manager = MongoManager(COLLECTION, LN_MODELS)
-    linkedin = LinkedinParser(db_manager=db_manager)
-    linkedin.parsing_suite(LN_LOCATIONS, LN_KEYWORDS)
+    linkedin = LinkedinParser(db_manager, LN_KEYWORDS, LN_LOCATIONS)
+    linkedin.parsing_suite()
 
 @cli.command()
 def launch_djinni_parsing():
     db_manager = MongoManager(COLLECTION, DJ_MODELS)
-    djinni = DjinniParser(db_manager=db_manager)
-    djinni.parsing_suite(DJ_KEYWORDS)
+    djinni = DjinniParser(db_manager, LN_KEYWORDS)
+    djinni.parsing_suite()
 
 @cli.command
 def get_chart():

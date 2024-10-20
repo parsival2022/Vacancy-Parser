@@ -38,7 +38,8 @@ class DjinniParser(Parser):
         super().perform_login()
 
     @repeat_if_fail(AttributeError, 5)
-    def extract_job_details(self, job):
+    def extract_job_details(self, *args):
+        job = args[0]
         data = {}
         eng_levels = ['Advanced', 'Fluent', 'Beginner', 'Elementary', 'Intermediate']
         workplaces = ['Remote', 'Full Remote', 'Office', 'Hybrid-Remote']
@@ -60,8 +61,8 @@ class DjinniParser(Parser):
                 data["employment_type"] = d
         return data
     
-    def perform_jobs_search(self, keywords):
-        for keyword in keywords:
+    def perform_jobs_search(self):
+        for keyword in self.keywords:
             self.click_on_element(*self.jobs_btn)
             self.wait((5, 10))
             self.current_page = 1
@@ -90,15 +91,16 @@ class DjinniParser(Parser):
                     self.current_page = None
 
     @execute_if_fail((IndexError, TypeError, AttributeError), lambda: None)
-    def extract_skills(self, soup):
+    def extract_job_skills(self, *args):
+        soup = args[0]
         skills:str = soup.find(*self.job_extra_info).find_all("li", {"class": "mb-1"})[1].get_text(strip=True)
         return [skill.strip() for skill in skills.split(",")]
 
 
     @repeat_if_fail((WebDriverException, ElementNotInteractableException), 7)
     @ignore_if_fail(ElementNotInteractableException)
-    def perform_job_parsing(self, keywords):
-        for keyword in keywords:
+    def perform_jobs_parsing(self):
+        for keyword in self.keywords:
             urls = self.db_manager.get_many({"keyword": keyword, "completed": False})
             jobs_pg = self.driver.current_window_handle
             for url in urls:
@@ -106,7 +108,7 @@ class DjinniParser(Parser):
                 self.driver.get(url["url"])
                 self.wait((5, 10))
                 soup = self.parse_page()
-                skills = self.extract_skills(soup)
+                skills = self.extract_job_skills(soup)
                 if skills:
                     self.db_manager.update_one({"url": url["url"]}, {"$set": {"skills": skills, "completed": True}})
                 self.driver.close()
@@ -115,10 +117,10 @@ class DjinniParser(Parser):
                 self.wait((8, 10))
 
     @repeat_if_fail((NoSuchElementException, ConnectionError), 5)
-    def parsing_suite(self, keywords):
+    def parsing_suite(self):
         self.perform_login()
-        self.perform_jobs_search(keywords)
-        self.perform_job_parsing(keywords)
+        self.perform_jobs_search()
+        self.perform_jobs_parsing()
         self.driver.quit()
 
 PYTHON_KWD = CLUSTERS[PYTHON]["keywords"]["dj_kw"]
