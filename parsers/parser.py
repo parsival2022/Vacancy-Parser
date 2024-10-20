@@ -4,15 +4,10 @@ from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException, WebDriverException
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.options import Options
-from typing import Callable, Iterable
 from webdriver_manager.chrome import ChromeDriverManager
-from clusters import *
 from .decorators import repeat_if_fail
-from .errors import ModeUnacceptableMethod, NoRequiredParameterProvided
 
 load_dotenv()
 HTTPS = "https"
@@ -23,7 +18,6 @@ class Parser:
     prefixes = {HTTPS: "https://",
                 HTTP: "http://"}
     headers = {}
-    cache = []
     current_page = None
     base_url = "https://www.example.com"
     login_url = None
@@ -34,14 +28,14 @@ class Parser:
     login_btn = (By.XPATH, '//button[text()="Log In"]')
     login_fails = ((By.XPATH, '//div[contains(@class, "form-group has-error")]'))
 
-    def __init__(self, init_url=None, db_manager=None, use_driver=True, use_request=False, proxies=[]) -> None:
+    def __init__(self, db_manager, keywords, locations=None, init_url=None, use_driver=True, use_request=False) -> None:
         self.init_url = init_url if init_url else self.login_url
         self.db_manager = db_manager
-        self.data_file = f"{self.source_name}_data.json"
-        self.urls_file = f"{self.source_name}_urls.json"
         self.username = os.environ.get(self.source_name.upper().replace(" ", "_") + "_USERNAME") or None
         self.password = os.environ.get(self.source_name.upper().replace(" ", "_") + "_PASSWORD") or None
-        self.proxies = proxies
+        self.keywords: list[str] = keywords
+        self.locations: list[str] = locations
+        #self.proxies = proxies
         if use_request:
             self.session = requests.Session()
         if use_driver:
@@ -70,54 +64,6 @@ class Parser:
         except TypeError:
             _t = t
         time.sleep(_t)
-
-    def write_to_file(self, data, filename='parser_data.json'):
-        with open(filename, 'w', encoding='utf-8') as file:
-            json.dump(data, file, ensure_ascii=False, indent=4)
-
-    def append_to_file(self, filename, data:Iterable[str]|str):
-        with open(filename, 'a') as file:
-            if isinstance(data, (tuple, set, list)):
-                for url in data:
-                    file.write(url + '\n')
-            else: file.write(data + '\n')
-        
-    def add_prefix(self, url:str, mode:str) -> str:
-        if not "://" in url:
-            url = self.prefixes[mode] + url
-        return url
-
-    def normalize_urls(self, filepath:str, mode) -> None:
-        with open(filepath, 'r') as file:
-            urls = json.load(file)
-        checked_urls = list(set(self.add_prefix(url, mode) for url in urls))
-        self.write_to_file(f'normalised_{self.source_name}_urls.json', checked_urls)
-    
-    def combine_cookies(self):
-        cookies = '; '.join(['%s=%s'%(key,value) for key,value in self.session.cookies.get_dict().items()]) 
-        return cookies
-    
-    def update_cookies(self):
-        cookies = self.combine_cookies()
-        self.headers.update({"Cookies": cookies})
-    
-    def make_get_request(self, url=None, soup=False, **kwargs):
-        url = self.init_url if not url else url
-        res = self.session.get(url, **kwargs)
-        res.raise_for_status()
-        if soup:
-           soup = BeautifulSoup(res.text, "html.parser")
-           return soup
-        return res
-    
-    def make_post_request(self, url, soup=False, *args, **kwargs):
-        if not url:
-            raise NoRequiredParameterProvided
-        res = self.session.post(url, *args, **kwargs)
-        if soup:
-           soup = BeautifulSoup(res.text, "html.parser")
-           return soup
-        return res
     
     @repeat_if_fail([TypeError, AttributeError], 5)
     def parse_page(self) -> BeautifulSoup:
@@ -136,23 +82,9 @@ class Parser:
         res = self.driver.find_element(f_lvl_by, f_lvl_attrs).find_elements(s_lvl_by, s_lvl_attrs)
         return res
     
-    def soup_extract_text_suite(self, soup:BeautifulSoup=None, *args) -> dict:
-        if not soup:
-            soup = self.parse_page()
-        data = {}
-        for creds in args:
-            data[creds[0]] = soup.find(*creds[1]).get_text(strip=True)
-        return data
-    
     @repeat_if_fail(NoSuchElementException, 7)
     def click_on_element(self, by, value):
         self.driver.find_element(by, value).click()
-
-    @repeat_if_fail(NoSuchElementException, 5)
-    def wait_and_click_on_element(self, by, value):
-        element = WebDriverWait(self.driver, 10).until(
-                  EC.element_to_be_clickable((by, value)))
-        element.click()
 
     @repeat_if_fail(NoSuchElementException, 5)
     def fill_input_element(self, by, input, keys):
@@ -176,3 +108,20 @@ class Parser:
         except NoSuchElementException: 
             pass
         self.wait(15)
+
+    def parsing_suite(self):
+        raise NotImplementedError
+
+    def perform_jobs_search(self):
+        raise NotImplementedError
+
+    def perform_jobs_parsing(self):
+        raise NotImplementedError
+
+    def extract_job_skills(self, *args):
+        raise NotImplementedError
+
+    def extract_job_details(self, *args):
+        raise NotImplementedError
+
+
